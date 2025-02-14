@@ -11,9 +11,9 @@ TROJAN_BOT_CHAT_ID = '@solana_trojanbot'  # This is the bot's username
 
 # List of private channel invite links
 channel_invite_links = [
-    'https://t.me/+J2FjYDsfcyU2NzZk'
+    'https://t.me/cryptoyeezuscalls'
 ]
-    # 'https://t.me/cryptoyeezuscalls'
+    # 'https://t.me/+J2FjYDsfcyU2NzZk'
 
 # Set up the Telegram client
 client = TelegramClient('session_name', api_id, api_hash)
@@ -63,3 +63,6 @@ async def main():
 if __name__ == '__main__':
     import asyncio
     asyncio.run(main())
+
+#ALREADY USED
+#https://dexscreener.com/solana/gegkwsv48e3luplcpbvwnznbake4p8rgaaz6tjwhmoon
