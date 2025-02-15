@@ -76,6 +76,9 @@ async def forward_message(message):
                 print(f"[{current_time}] Address {address} has already been forwarded. Skipping.")
 
 
+# Keep track of processed message IDs
+processed_message_ids = set()
+
 # Set up event handler to listen for new messages from the channels
 @client.on(events.NewMessage(chats=channel_invite_links))  # Listen to messages from multiple channels
 async def handler(event):
@@ -83,6 +86,14 @@ async def handler(event):
 
     # Get the current time in a readable format
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Check if the message has already been processed (based on message ID)
+    if message.id in processed_message_ids:
+        print(f"[{current_time}] Message {message.id} already processed, skipping.")
+        return  # Skip this message
+
+    # Mark the message as processed
+    processed_message_ids.add(message.id)
 
     print(f"[{current_time}] Received Message")
     await forward_message(message)
@@ -95,4 +106,5 @@ async def main():
 
 if __name__ == '__main__':
     import asyncio
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
