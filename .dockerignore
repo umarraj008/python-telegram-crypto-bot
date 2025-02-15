@@ -7,6 +7,8 @@ session_name.session
 session_name.session-journal
 system_usage.log
 test.py
+serverInfo.txt
+readme.md
 
 # Ignore Python cache files
 __pycache__
