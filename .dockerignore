@@ -1,0 +1,26 @@
+todo.txt
+configMY.json
+addresses.txt
+*.session
+*.session-journal
+session_name.session
+session_name.session-journal
+system_usage.log
+test.py
+
+# Ignore Python cache files
+__pycache__
+*.pyc
+*.pyo
+
+# Ignore all files in the 'tests' directory
+tests/
+
+# Ignore log files
+*.log
+
+# Ignore other non-essential files
+*.md
+*.git
+*.gitignore
+Dockerfile

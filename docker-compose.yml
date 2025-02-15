@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app1:
+    image: my-python-app  # The image built from your Dockerfile
+    environment:
+      API_ID: ""
+      API_HASH: ""
+      PHONE_NUMBER: ""
+      TROJAN_BOT_CHAT_ID: "@solana_trojanbot"
+      CHANNEL_INVITE_LINK: '[""]'  # Make sure this is a valid JSON array as a string
+    stdin_open: true   # Keep stdin open for interactive mode
+    tty: true          # Enable a terminal for interactive use
+    restart: "no"      # Prevent auto-restart during debugging
