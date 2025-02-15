@@ -1,5 +1,6 @@
 todo.txt
 config.json
+addresses.txt
 *.session
 *.session-journal
 session_name.session
