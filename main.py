@@ -1,22 +1,43 @@
 from telethon import TelegramClient, events
+from datetime import datetime
 import re
+import json
 
-# Your Telegram API details
-api_id = '20027855'       # Replace with your API ID from https://my.telegram.org
-api_hash = 'ab5081fcbdc01d94c1d182d7ac44a020'   # Replace with your API hash from https://my.telegram.org
-phone_number = '+44 7399 276578'  # Your phone number registered with Telegram
+# Load configuration from the config.json file
+def load_config():
+    with open('config.json', 'r') as f:
+        return json.load(f)
 
-# Replace with your Trojan bot's chat ID or username
-TROJAN_BOT_CHAT_ID = '@solana_trojanbot'  # This is the bot's username
+# Load the configuration data
+config = load_config()
+
+# Your Telegram API details from the config file
+api_id = config['api_id']
+api_hash = config['api_hash']
+phone_number = config['phone_number']
+
+# Trojan bot's chat ID or username
+TROJAN_BOT_CHAT_ID = config['trojan_bot_chat_id']
 
 # List of private channel invite links
-channel_invite_links = [
-    'https://t.me/cryptoyeezuscalls'
-]
-    # 'https://t.me/+J2FjYDsfcyU2NzZk'
+channel_invite_links = config['channel_invite_links']
 
 # Set up the Telegram client
 client = TelegramClient('session_name', api_id, api_hash)
+
+# Function to save address to a file
+def save_address(address):
+    with open('addresses.txt', 'a') as f:
+        f.write(address + '\n')
+
+# Function to check if the address already exists in the file
+def address_exists(address):
+    try:
+        with open('addresses.txt', 'r') as f:
+            addresses = f.readlines()
+        return any(line.strip() == address for line in addresses)
+    except FileNotFoundError:
+        return False
 
 # Function to forward filtered messages
 async def forward_message(message):
@@ -41,17 +62,29 @@ async def forward_message(message):
         
         # Process each address found
         for address in addresses:
-            # If the address is valid and not part of a filtered URL, forward it
-            print(f"Found and forwarding address: {address}")
-            # Uncomment the next line to forward the address to the bot
-            await client.send_message(TROJAN_BOT_CHAT_ID, f"{address}")
+            # Get the current time in a readable format
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Check if the address has already been forwarded
+            if not address_exists(address):
+                # If the address is valid and not already saved, forward it
+                print(f"[{current_time}] Found and forwarding address: {address}")
+                await client.send_message(TROJAN_BOT_CHAT_ID, f"{address}")
+                save_address(address)  # Save the address after forwarding
+                return
+            else:
+                print(f"[{current_time}] Address {address} has already been forwarded. Skipping.")
 
 
 # Set up event handler to listen for new messages from the channels
 @client.on(events.NewMessage(chats=channel_invite_links))  # Listen to messages from multiple channels
 async def handler(event):
     message = event.message
-    print(f"Received message: {message.text}")
+
+    # Get the current time in a readable format
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    print(f"[{current_time}] Received Message")
     await forward_message(message)
 
 # Start the client and handle the login process
@@ -63,6 +96,3 @@ async def main():
 if __name__ == '__main__':
     import asyncio
     asyncio.run(main())
-
-#ALREADY USED
-#https://dexscreener.com/solana/gegkwsv48e3luplcpbvwnznbake4p8rgaaz6tjwhmoon
