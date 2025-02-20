@@ -63,7 +63,7 @@ async def forward_message(message):
         # Process each address found
         for address in addresses:
             # Get the current time in a readable format
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             
             # Check if the address has already been forwarded
             if not address_exists(address):
@@ -85,7 +85,7 @@ async def handler(event):
     message = event.message
 
     # Get the current time in a readable format
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
     # Check if the message has already been processed (based on message ID)
     if message.id in processed_message_ids:
