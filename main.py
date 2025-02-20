@@ -95,7 +95,7 @@ async def handler(event):
     # Mark the message as processed
     processed_message_ids.add(message.id)
 
-    print(f"[{current_time}] Received Message")
+    print(f"[{current_time}] Received Message: {message.id}")
     await forward_message(message)
 
 # Start the client and handle the login process
