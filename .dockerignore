@@ -9,6 +9,7 @@ system_usage.log
 test.py
 serverInfo.txt
 readme.md
+users.txt
 
 # Ignore Python cache files
 __pycache__
