@@ -1,64 +1,15 @@
 from telethon import TelegramClient, events
 from datetime import datetime
+from tests import test_data
+import asyncio
 import re
 import json
+import sys
+import argparse
 
-tests = [
-    (
-        "Regular Post",
-        """
-        🚨PAID PROMO ACROSS ALL PLATFORMS🚨
-
-        LOW CAP HIGH RISK HIGH REWARD MOONSHOT SHITTER GAMBLE AROUND 33K MC AREA. DYOR NFA. 
-
-        GOOD BRANDING AND NARRATIVE IN CURRENT MARKET SENTIMENT WITH VIRAL POTENTIAL. TEAM SEEMS TO BE GRINDING HARD AS WELL.
-
-        https://x.com/growaparonsol
-
-        https://dexscreener.com/solana/Hwercue3DeYXUhbybMrUeX8KNMh42zZQdhbMNN3wMwyc
-
-        https://t.me/GrowAPair100x
-
-        7w1YgW5kkwBz43E32jWdnskK8wdvgvsSAoWZ7v9Nmoon
-        """,
-        "Hwercue3DeYXUhbybMrUeX8KNMh42zZQdhbMNN3wMwyc"
-    ),
-    (
-        """
-        🚨HIGH RISK HIGH REWARD GAMBLE PLAY🚨
-
-        GOING OUT ACROSS ALL PLATFORMS
-
-        GOOD NARRATIVE FART META. THE ONLY OTHER FART BOOK MY ADAM WALLACE LIKE THE FARTBOY COIN  THAT RAN OVER 200M THE REST ARE JUST DERIVATIVES EXCEPT THIS ONE SO I THINK ITS SUPER UNDERVALUED. 300K MC AREA DYOR NFA.
-
-        https://dexscreenerDEEZ.com/solana/4iWpF4TMzHnDP7tjfYWqW8x1qWHb1AbqNhhJqVdTYxL4
-
-        https://fartclubsol.com/
-
-        https://x.com/fartclub_cto
-
-        https://t.me/cto_fartclub
-
-        6zkZPeSVSynKoNgPjb6DEEZyCfJ5BFFro4gcKXuMrPtvpump
-
-        YOU HAVE TO REMOVE THE WORD “DEEZ” FROM THE CA AND DEX LINK SO BOTS GET SIDELINED
-        """,
-        "4iWpF4TMzHnDP7tjfYWqW8x1qWHb1AbqNhhJqVdTYxL4"
-    ),
-]
-
-deezMessageWithBrokenURL= ()
-kingMessage = ()
-kingMessageWithBrokenURL= ()
-rugPullMessage = ()
-brokenURLmessage = ()
-longRemoveWord = ()
-removeSentance = ()
-lowercaseRemoveWord = ()
-randomCaseRemoveWord = ()
 # Load configuration from the config.json file
 def load_config():
-    with open('config.json', 'r') as f:
+    with open('configMY.json', 'r') as f:
         return json.load(f)
 
 # Load the configuration data
@@ -85,6 +36,7 @@ def save_address(address):
 
 # Function to check if the address already exists in the file
 def address_exists(address):
+    if test: return False
     try:
         with open('addresses.txt', 'r') as f:
             addresses = f.readlines()
@@ -132,107 +84,99 @@ async def forward_messageV1(message):
 # Function to forward filtered messages
 # VERSION 2 (REMOVE WORD DETECTION)
 async def forward_message(message):
-    # List of filter words (keywords to avoid in URLs, etc.)
+    def log(msg):
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        print(f"[{current_time}] {msg}")
+
     filter_words = ['http', 'https', 'dexscreener', '.com']
-    
-    # Regular expression to detect Solana addresses (44 alphanumeric characters)
-    address_pattern = r'\b[A-Za-z0-9]{44}\b'  # Matches exactly 44 alphanumeric characters
-    
-    # Split the message text into lines
-    lines = message.text.splitlines()
+    address_pattern = r'\b[A-Za-z0-9]{44,}\b'
+    dex_url_pattern = r'https://dexscreener[A-Za-z0-9]*\.com/solana/([A-Za-z0-9]{44,})\b'
 
-    # First, check for "DO NOT BUY" or "INSTA RUG" phrases
-    if "do not buy" in message.text.lower() or "insta rug" in message.text.lower():
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        print(f"[{current_time}] This coin is flagged as a rug pull. Stopping processing.")
-        return  # Stop processing if any of these phrases are found
+    # Stop processing if it's a known scam/rug pull
+    if "do not buy" in message.text.lower() or "insta rug" in message.text.lower() or "DO NOT BUY THIS IM FISHING FOR A BOT FRONT RUNNING THE CALLS WILL INSTA RUG DO NOT BUY" in message.text.lower() or "FISHING" in message.text.lower():
+        log("This coin is flagged as a rug pull. Stopping processing.")
+        return "This coin is flagged as a rug pull. Stopping processing."
 
-    # Initialize the word to be removed as None
+    # Check if the message contains a word inside quotes (assumed to be the removal keyword)
     word_to_remove = None
-
-    # Look for the phrase "REMOVE THE WORD" and extract the word
-    match = re.search(r'remove the word ["\']([A-Za-z0-9]+)["\']', message.text, re.IGNORECASE)
+    match = re.search(r'["“”\']([A-Za-z0-9]+)["“”\']', message.text)
     if match:
-        word_to_remove = match.group(1).lower()
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        print(f"[{current_time}] Found instruction to remove word: {word_to_remove}")
+        word_to_remove = match.group(1)
+        log(f"Found instruction to remove word: {word_to_remove}")
 
-    # If a word to remove is found, clean the message by removing the word
-    if word_to_remove:
-        message.text = message.text.replace(word_to_remove, "")
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        print(f"[{current_time}] Removed all occurrences of the word '{word_to_remove}' from the message.")
+    # # Check for a DexScreener URL
+    # dex_match = re.search(dex_url_pattern, message.text)
+    # if dex_match:
+    #     dex_address = dex_match.group(1)
+    #     log(f"Found DexScreener address: {dex_address}")
 
-    # Look for the Dexscreener URL and extract the address
-    dex_url_pattern = r'https://dexscreener(?:[A-Za-z0-9]+)?\.com/solana/([A-Za-z0-9]+(?:[A-Za-z0-9]*))'
-    dex_match = re.search(dex_url_pattern, message.text)
+    #     if word_to_remove:
+    #         dex_address = dex_address.replace(word_to_remove, "")
+    #         log(f"Cleaned DexScreener address: {dex_address}")
 
-    if dex_match:
-        dex_address = dex_match.group(1)
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        print(f"[{current_time}] Found Dexscreener address (before cleaning): {dex_address}")
-        
-        # If there's a word to remove, clean the address part of the URL
-        if word_to_remove:
-            dex_address = dex_address.replace(word_to_remove, "")
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            print(f"[{current_time}] Removed the word '{word_to_remove}' from the Dexscreener address: {dex_address}")
-        
-        # Validate the cleaned address length
-        if len(dex_address) == 44:
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            print(f"[{current_time}] Sending the cleaned Dexscreener address to client: {dex_address}")
-            # await client.send_message(TROJAN_BOT_CHAT_ID, f"{dex_address}")  # Uncomment to send
-            return
-        else:
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            print(f"[{current_time}] Cleaned address is invalid (not 44 characters): {dex_address}")
-    
-    # Process each line in the message for Solana coin address
-    for line in lines:
-        # Check if the line contains any of the filter keywords (URLs)
+    #     if len(dex_address) == 44:  # Ensure it's still valid after removal
+    #         log(f"Sending DexScreener address to client: {dex_address}")
+    #         await client.send_message(TROJAN_BOT_CHAT_ID, f"{dex_address}")
+            # if not test:
+    #         save_address(dex_address)
+    #         return dex_address
+    #     else:
+    #         log(f"Invalid DexScreener address after removal: {dex_address}")
+
+    # Process each line in the message for a Solana address
+    for line in message.text.splitlines():
         if any(keyword in line.lower() for keyword in filter_words):
-            continue  # Skip this line if it contains unwanted keywords
-        
-        # Search for all 44-character addresses in the line
-        addresses = re.findall(address_pattern, line)
-        
-        # Process each address found
-        for address in addresses:
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            
-            # Check if the address has already been forwarded
-            if not address_exists(address):
-                # If the address is valid and not already saved, forward it
-                print(f"[{current_time}] Found and forwarding address: {address}")
-                # await client.send_message(TROJAN_BOT_CHAT_ID, f"{address}")  # Uncomment to actually send
-                # save_address(address)  # Save the address after forwarding
-                return
-            else:
-                print(f"[{current_time}] Address {address} has already been forwarded. Skipping.")
+            continue  # Skip lines containing unwanted keywords
 
+        addresses = re.findall(address_pattern, line)
+        for address in addresses:
+            cleaned_address = address
+
+            # Remove the keyword from the address if needed
+            if word_to_remove:
+                cleaned_address = cleaned_address.replace(word_to_remove, "")
+                log(f"Cleaned Solana address: {cleaned_address}")
+
+            if len(cleaned_address) == 44 and not address_exists(cleaned_address):
+                log(f"Found and forwarding Solana address: {cleaned_address}")
+
+                if not test:
+                    await client.send_message(TROJAN_BOT_CHAT_ID, f"{cleaned_address}")
+                    save_address(cleaned_address)
+                return cleaned_address
+            else:
+                log(f"Address {cleaned_address} has already been forwarded or is invalid. Skipping.")
+
+    return None  # If nothing was found
 
 # Keep track of processed message IDs
 processed_message_ids = set()
+lastMessage = ""
 
 # Set up event handler to listen for new messages from the channels
-@client.on(events.NewMessage(chats=channel_invite_links))  # Listen to messages from multiple channels
+@client.on(events.NewMessage(chats=channel_invite_links))  # Listen for new messages from multiple channels
 async def handler(event):
-    message = event.message
+    global lastMessage  
 
-    # Get the current time in a readable format
+    message = event.message
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
-    # Check if the message has already been processed (based on message ID)
-    if message.id in processed_message_ids:
-        print(f"[{current_time}] Message {message.id} already processed, skipping.")
-        return  # Skip this message
+    # Normalize message text (remove extra spaces, newlines, etc.)
+    message_text = message.text.strip() if message.text else ""
 
-    # Mark the message as processed
+    # Check if message ID or content has already been processed
+    if message.id in processed_message_ids or lastMessage == message_text:
+        print(f"[{current_time}] Message {message.id} already processed, skipping.")
+        return  # Skip duplicate messages
+
+    # Update last message content **before processing**
+    lastMessage = message_text
     processed_message_ids.add(message.id)
 
     print(f"[{current_time}] Received Message: {message.id}")
-    await forward_message(message)
+    
+    await forward_message(message)  # Forward the message immediately
+
 
 # Start the client and handle the login process
 async def main():
@@ -240,9 +184,57 @@ async def main():
     print("Client started, listening for messages...")
     await client.run_until_disconnected()  # Keep the client running
 
-    
+async def run_tests(test_data):
+    print("---TEST MODE---")
+    print("----------------------------------------------------------------------------------")
+
+
+    # Define Message class
+    class Message:
+        def __init__(self, text):
+            self.text = text
+
+    passes = 0
+
+    # Loop and do tests
+    for test in test_data:
+        message = Message(test[1])
+        result = await forward_message(message)
+
+        if (result == test[2]):
+            print(f"\033[32mTest:     {test[0]} was successful\033[0m")
+            print(f"\033[32mExpected: {test[2]}\033[0m")
+            print(f"\033[32mReceived: {result}\033[0m")
+            passes += 1
+        else:
+            print(f"\033[31mTest:     {test[0]} Failed\033[0m")
+            print(f"\033[31mExpected: {test[2]}\033[0m")
+            print(f"\033[31mReceived: {result}\033[0m")
+               
+        print("----------------------------------------------------------------------------------")
+
+    print("")
+
+    if passes == len(test_data):
+        print(f"\033[32mAll Tests Passed!\033[0m")
+        print(f"\033[32m{passes} / {len(test_data)} passed.\033[0m")
+    else:
+        print(f"\033[31mTests Failed!\033[0m")
+        print(f"\033[31m{passes} / {len(test_data)} passed.\033[0m")
+
+    print("")
+    sys.exit("---END---")
 
 if __name__ == '__main__':
-    import asyncio
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    parser = argparse.ArgumentParser(description="Check for CLI arguments")
+    parser.add_argument('arg1', nargs='?', help="First argument")
+
+    args = parser.parse_args()
+
+    if args.arg1 == "test":
+        test = True
+        asyncio.run(run_tests(test_data))
+    else:
+        test = False
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
