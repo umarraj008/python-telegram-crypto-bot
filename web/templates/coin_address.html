@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Coin Addresses</title>
+</head>
+<body>
+    <h2>Stored Coin Addresses</h2>
+    <table border="1">
+        <tr>
+            <th>CA</th>
+            <th>Status</th>
+            <th>Created At</th>
+        </tr>
+        {% for record in records %}
+        <tr>
+            <td>{{ record[0] }}</td>
+            <td>{{ record[1] }}</td>
+            <td>{{ record[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br><a href="/dashboard">Back to Dashboard</a>
+</body>
+</html>
