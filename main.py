@@ -7,9 +7,20 @@ import json
 import sys
 import argparse
 
+# Get args
+parser = argparse.ArgumentParser(description="Check for CLI arguments")
+parser.add_argument('arg1', nargs='?', help="First argument")
+args = parser.parse_args()
+
+if args.arg1 == "test":
+    test = True
+
 # Load configuration from the config.json file
 def load_config():
-    with open('configMY.json', 'r') as f:
+    configFile = "config.json"
+    if test: configFile = "testConfig.json"
+
+    with open(configFile, 'r') as f:
         return json.load(f)
 
 # Load the configuration data
@@ -226,13 +237,7 @@ async def run_tests(test_data):
     sys.exit("---END---")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Check for CLI arguments")
-    parser.add_argument('arg1', nargs='?', help="First argument")
-
-    args = parser.parse_args()
-
-    if args.arg1 == "test":
-        test = True
+    if test:
         asyncio.run(run_tests(test_data))
     else:
         test = False
