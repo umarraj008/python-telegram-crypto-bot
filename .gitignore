@@ -1,26 +1,21 @@
-todo.txt
-addresses.txt
-*.session
-*.session-journal
-session_name.session
-session_name.session-journal
-system_usage.log
-serverInfo.txt
-users.txt
-
-# Ignore Python cache files
-__pycache__
+# Python
 *.pyc
-*.pyo
-
-# Ignore all files in the 'tests' directory
-tests/
-
-# Ignore log files
+__pycache__/
+venv/
+env/
 *.log
 
-# Ignore other non-essential files
-*.md
-*.git
-*.gitignore
-Dockerfile
+# Docker
+*.env
+docker-compose.override.yml
+database/data/
+redis/data/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Ignore Telegram session files
+*.session
+*.session-journal
