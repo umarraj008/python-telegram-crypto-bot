@@ -1,22 +1,76 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  app1:
-    image: my-python-app  # The image built from your Dockerfile
+  database:
+    image: postgres:15
+    container_name: telegram_db
+    restart: always
     environment:
-      API_ID: ""
-      API_HASH: ""
-      PHONE_NUMBER: ""
-      TROJAN_BOT_CHAT_ID: "@solana_trojanbot"
-      CHANNEL_INVITE_LINK: '[""]'  # Make sure this is a valid JSON array as a string
-    stdin_open: true   # Keep stdin open for interactive mode
-    tty: true          # Enable a terminal for interactive use
-    restart: "no"      # Prevent auto-restart during debugging
+      POSTGRES_USER: your_user
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: telegram_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:latest
+    container_name: telegram_redis
+    restart: always
+    ports:
+      - "6379:6379"
 
+  controller:
+    build: ./controller
+    container_name: telegram_controller
+    restart: always
+    depends_on:
+      - database
+      - redis
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL}
+      REDIS_HOST: redis
+      DB_HOST: database
+      DB_NAME: telegram_db
+      DB_USER: your_user
+      DB_PASSWORD: your_password
+    ports:
+      - "5001:5001"
 
-# TEST CHANEL
-# https://t.me/+J2FjYDsfcyU2NzZk
+  client:
+    build: ./client
+    container_name: telegram_client
+    restart: always
+    depends_on:
+      - controller
+    environment:
+      REDIS_HOST: redis
+      DB_HOST: database
+      DB_NAME: telegram_db
+      DB_USER: your_user
+      DB_PASSWORD: your_password
+    ports:
+      - "5002:5002"
+    deploy:
+      replicas: 5  # Adjust this based on the number of clients you want running
 
-# YEZUS
-# https://t.me/cryptoyeezuscalls
+  web:
+    build: ./web
+    container_name: telegram_web
+    restart: always
+    depends_on:
+      - database
+      - controller
+    environment:
+      REDIS_HOST: redis
+      DB_HOST: database
+      DB_NAME: telegram_db
+      DB_USER: your_user
+      DB_PASSWORD: your_password
+    ports:
+      - "8000:8000"
+
+volumes:
+  db_data:

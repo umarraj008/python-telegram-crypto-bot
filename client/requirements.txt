@@ -1,0 +1,8 @@
+asyncio
+os
+time
+psycopg2-binary
+redis
+requests
+json
+telethon
