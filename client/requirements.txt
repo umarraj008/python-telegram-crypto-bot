@@ -1,5 +1,4 @@
 asyncio
-os
 time
 psycopg2-binary
 redis
