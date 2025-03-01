@@ -29,8 +29,6 @@ services:
       - database
       - redis
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL}
       REDIS_HOST: redis
       DB_HOST: database
       DB_NAME: telegram_db
@@ -53,8 +51,6 @@ services:
       DB_PASSWORD: your_password
     ports:
       - "5002:5002"
-    deploy:
-      replicas: 5  # Adjust this based on the number of clients you want running
 
   web:
     build: ./web
