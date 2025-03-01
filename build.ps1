@@ -7,10 +7,10 @@ $SERVICES = @("client", "controller", "web")
 
 foreach ($SERVICE in $SERVICES) {
     Write-Host "Building $SERVICE..."
-    docker build -t "$DOCKER_USER/$DOCKER_REPO/$SERVICE" "./$SERVICE"
+    docker build -t "$DOCKER_USER/$DOCKER_REPO/$SERVICE:latest" "./$SERVICE"
 
     Write-Host "Pushing $SERVICE to Docker Hub..."
-    docker push "$DOCKER_USER/$DOCKER_REPO/$SERVICE"
+    docker push "$DOCKER_USER/$DOCKER_REPO/$SERVICE:latest"
 }
 
 Write-Host "All images built and pushed successfully!"
