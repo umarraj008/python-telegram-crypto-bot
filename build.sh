@@ -9,11 +9,11 @@ SERVICES=("client" "controller" "web")
 
 # Loop through each service, build, and push
 for SERVICE in "${SERVICES[@]}"; do
-    echo "🚀 Building $SERVICE..."
+    echo "Building $SERVICE..."
     docker build -t $DOCKER_USER/$DOCKER_REPO/$SERVICE ./$SERVICE
 
-    echo "📤 Pushing $SERVICE to Docker Hub..."
+    echo "Pushing $SERVICE to Docker Hub..."
     docker push $DOCKER_USER/$DOCKER_REPO/$SERVICE
 done
 
-echo "✅ All images built and pushed successfully!"
+echo "All images built and pushed successfully!"
