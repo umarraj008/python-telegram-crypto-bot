@@ -94,7 +94,7 @@ async def forward_messageV1(message):
 
 # Function to forward filtered messages
 # VERSION 2 (REMOVE WORD DETECTION)
-async def forward_message(message):
+async def forward_messageV2(message):
     def log(msg):
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         print(f"[{current_time}] {msg}")
@@ -160,6 +160,18 @@ async def forward_message(message):
 
     return None  # If nothing was found
 
+# VERSION 3 
+# RUG DETECTION
+# SAVES RUGS
+# REMOVES KING
+# SPLIT DETECTION
+# SOLANA VALIDATE
+# TIME PRINTING
+async def forward_messageV3(message):
+    def log(msg):
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        print(f"[{current_time}] {msg}")
+
 # Keep track of processed message IDs
 processed_message_ids = set()
 lastMessage = ""
@@ -186,8 +198,7 @@ async def handler(event):
 
     print(f"[{current_time}] Received Message: {message.id}")
     
-    await forward_message(message)  # Forward the message immediately
-
+    await forward_messageV3(message)  # Forward the message immediately
 
 # Start the client and handle the login process
 async def main():
@@ -199,7 +210,6 @@ async def run_tests(test_data):
     print("---TEST MODE---")
     print("----------------------------------------------------------------------------------")
 
-
     # Define Message class
     class Message:
         def __init__(self, text):
@@ -210,7 +220,7 @@ async def run_tests(test_data):
     # Loop and do tests
     for test in test_data:
         message = Message(test[1])
-        result = await forward_message(message)
+        result = await forward_messageV3(message)
 
         if (result == test[2]):
             print(f"\033[32mTest:     {test[0]} was successful\033[0m")
