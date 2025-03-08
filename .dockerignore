@@ -1,17 +1,26 @@
-# Ignore system files
-__pycache__/
+testConfig.json
+addresses.txt
+*.session
+*.session-journal
+session_name.session
+session_name.session-journal
+system_usage.log
+tests.py
+readme.md
+
+# Ignore Python cache files
+__pycache__
 *.pyc
 *.pyo
+
+# Ignore all files in the 'tests' directory
+tests/
+
+# Ignore log files
 *.log
-venv/
-env/
 
-# Ignore Git
-.git/
-.gitignore
-
-# Ignore Docker-related files
+# Ignore other non-essential files
+*.md
+*.git
+*.gitignore
 Dockerfile
-.dockerignore
-
-mock_gpt_api.py
