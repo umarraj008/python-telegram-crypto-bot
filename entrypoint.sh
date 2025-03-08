@@ -21,18 +21,8 @@ echo "+===========================================================+"
 cat /app/config.json
 echo ""
 
-# Loop through environment variables ADDR_1, ADDR_2, ADDR_3, etc., and append them to addresses.txt
-i=1
-while [ ! -z "$(eval echo \${ADDR_$i})" ]; do
-    echo "$(eval echo \${ADDR_$i})" >> /app/addresses.txt
-    ((i++))
-done
-
-# Debugging: print the content of addresses.txt
-echo "+===========================================================+"
-echo "addresses.txt:"
-echo "+===========================================================+"
-cat /app/addresses.txt
+# Create an empty addresses.txt file
+touch /app/addresses.txt
 
 # Run the Python application
 exec python main.py
