@@ -1,21 +1,18 @@
-# Python
-*.pyc
-__pycache__/
-venv/
-env/
-*.log
-
-# Docker
-*.env
-docker-compose.override.yml
-database/data/
-redis/data/
-
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-
-# Ignore Telegram session files
+addresses.txt
 *.session
 *.session-journal
+session_name.session
+session_name.session-journal
+system_usage.log
+testConfig.json
+
+# Ignore Python cache files
+__pycache__
+*.pyc
+*.pyo
+
+# Ignore all files in the 'tests' directory
+tests/
+
+# Ignore log files
+*.log
