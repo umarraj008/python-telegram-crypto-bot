@@ -7,7 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Expose ports (not necessary for client)
-EXPOSE 5002
-
 CMD ["python", "client.py"]

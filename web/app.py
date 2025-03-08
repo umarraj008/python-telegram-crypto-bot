@@ -7,7 +7,6 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 
 # Flask setup
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Used for session management
 
 # Docker client
 docker_client = docker.from_env()
@@ -20,9 +19,6 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "your_password")
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port="5432")
-
-# Redis setup
-redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=6379, decode_responses=True)
 
 # Hardcoded login credentials
 USERNAME = "admin"
@@ -122,4 +118,25 @@ def get_coin_addresses():
     return render_template("coin_addresses.html", records=records)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
+
+# View running containers
+# view coins in database
+# view users and userchannels in database
+# view channels in database
+# view last logs in controller (can select num of lines)
+
+# create new container
+# delete container
+# Stop/start container
+# restart container
+
+# add new user to database
+# add new coin to database
+# add new channel
+# add user to channel
+
+# remove user from database 
+# remove coin from database
+# remove channel
+# remove user from channel

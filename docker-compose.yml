@@ -6,20 +6,22 @@ services:
     container_name: telegram_db
     restart: always
     environment:
-      POSTGRES_USER: your_user
-      POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: telegram_db
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
 
   redis:
     image: redis:latest
     container_name: telegram_redis
     restart: always
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}
 
   controller:
     build: ./controller
@@ -29,28 +31,26 @@ services:
       - database
       - redis
     environment:
-      REDIS_HOST: redis
-      DB_HOST: database
-      DB_NAME: telegram_db
-      DB_USER: your_user
-      DB_PASSWORD: your_password
-    ports:
-      - "5001:5001"
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-  client:
-    build: ./client
-    container_name: telegram_client
-    restart: always
-    depends_on:
-      - controller
-    environment:
-      REDIS_HOST: redis
-      DB_HOST: database
-      DB_NAME: telegram_db
-      DB_USER: your_user
-      DB_PASSWORD: your_password
-    ports:
-      - "5002:5002"
+  # client:
+  #   build: ./client
+  #   container_name: telegram_client
+  #   restart: always
+  #   depends_on:
+  #     - controller
+  #   environment:
+  #     REDIS_HOST: ${REDIS_HOST}
+  #     REDIS_PORT: ${REDIS_PORT}
+  #     POSTGRES_HOST: ${POSTGRES_HOST}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
   web:
     build: ./web
@@ -60,13 +60,14 @@ services:
       - database
       - controller
     environment:
-      REDIS_HOST: redis
-      DB_HOST: database
-      DB_NAME: telegram_db
-      DB_USER: your_user
-      DB_PASSWORD: your_password
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
       - "8000:8000"
-
+      
 volumes:
   db_data:

@@ -1,117 +1,235 @@
-import asyncio
-import os
-import time
+import argparse
 import psycopg2
 import redis
+import json
+import asyncio
 from datetime import datetime
 from telethon import TelegramClient, events
-import json
 
-# Connect to PostgreSQL and fetch user details
-def get_user_details(session_name):
-    conn = psycopg2.connect(
-        dbname="telegram_db",
-        user="your_user",
-        password="your_password",
-        host="your_db_host",
+def get_db_connection():
+    """Connect to Postgres Database"""
+    return psycopg2.connect(
+        dbname="your_db_name",
+        user="your_db_user",
+        password="your_db_password",
+        host="localhost",
         port="5432"
     )
-    cur = conn.cursor()
 
-    cur.execute("""
-        SELECT telegram_api_id, telegram_api_hash, telegram_session, telegram_channel, bot_chat
-        FROM users WHERE session_name = %s AND is_active = TRUE
-    """, (session_name,))
-    
-    result = cur.fetchone()
-    cur.close()
+def get_user_details(user_id):
+    """ Fetch user details from the PostgreSQL database based on user_id """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = 'SELECT id, name, api_id, api_hash, phone_number, bot_chat, test_chat_link, created_at FROM users WHERE id = %s'
+    cursor.execute(query, (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
     conn.close()
+    return user
+
+def get_user_channels(user_id):
+    """ Fetch user's channels from the PostgreSQL database based on user_id """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = '''
+        SELECT c.id, c.name, c.link
+        FROM user_channels uc
+        JOIN channels c ON uc.channel_id = c.id
+        WHERE uc.user_id = %s
+    '''
+    cursor.execute(query, (user_id,))
+    channels = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return channels
+
+def is_message_processed(message_id):
+    """ Check if message is already processed (in DB or Redis) """
+    # Check in Redis Queue
+    if redis_client.exists(f"message:{message_id}"):
+        return True
     
-    if result:
-        return {
-            "api_id": result[0],
-            "api_hash": result[1],
-            "session": result[2],
-            "channel": result[3],
-            "bot_chat": result[4]
-        }
-    else:
-        print(f"[ERROR] No active session found for {session_name}")
-        exit()
+    # Check in DB (if message_id exists)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = 'SELECT 1 FROM messages WHERE message_id = %s'
+    cursor.execute(query, (message_id,))
+    processed = cursor.fetchone() is not None
+    cursor.close()
+    conn.close()
+    return processed
 
-# Load user session details
-session_name = os.getenv("TELEGRAM_SESSION", "default_session")
-user_details = get_user_details(session_name)
+async def forward_message(address, from_channel, time_received):
+    """Forward the received message to the bot's chat."""
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    message = f"""
+    Sent: {time_received}
+    Received: {current_time}
 
-# Setup Redis
-redis_host = os.getenv("REDIS_HOST", "localhost")
-redis_client = redis.Redis(host=redis_host, port=6379, decode_responses=True)
-redis_subscriber = redis_client.pubsub()
-redis_subscriber.subscribe("coin_addresses")  # Listen for extracted addresses
+    {address}
+    """
+    await client.send_message(user["BOT_CHAT"], message)
 
-# Initialize Telegram Client
-client = TelegramClient(user_details["session"], user_details["api_id"], user_details["api_hash"])
+async def handle_redis_notifications():
+    """Listen for messages from the Redis queue and handle them accordingly"""
+    pubsub = redis_client.pubsub()  # Create a pubsub object to subscribe to Redis channels
+    pubsub.subscribe('messages_channel')  # Subscribe to the 'messages_channel' Redis channel
 
-async def process_message(event):
-    """Process incoming messages from the Telegram channel."""
-    message_text = event.raw_text
-    lines = message_text.strip().split("\n")
+    print("Subscribed to 'messages_channel'... Waiting for notifications")
 
-    if len(lines) > 3:  # Only process messages with more than 3 lines
-        message_time = datetime.utcnow().strftime("%H:%M:%S.%f")[:-3]
-        print(f"[{message_time}] Received message in channel, sending to controller...")
+    # Listen for messages from Redis
+    async for message in pubsub.listen():
+        if message['type'] == 'message':
+            try:
+                # Deserialize the message (which is a JSON string) back to a Python object
+                message_data = json.loads(message['data'])
+                
+                # Extract the data from the message
+                address = message_data.get("address", "")
+                from_channel = message_data.get("from_channel", "")
+                time_received = message_data.get("time_received", "")
 
-        # Check Redis if message is already being processed
-        message_hash = hash(message_text)  # Simple deduplication check
-        if redis_client.exists(f"processing:{message_hash}"):
-            print(f"[{message_time}] Message already being processed. Skipping.")
-            return
+                print(f"New Address Received From Channel {from_channel}: {address}")
+                forward_message(address, from_channel, time_received)
 
-        redis_client.setex(f"processing:{message_hash}", 30, "processing")  # Mark as processing
+            except json.JSONDecodeError as e:
+                print(f"Error decoding message data: {e}")
 
-        # Send message to controller via Redis queue
-        redis_client.rpush("processing_queue", json.dumps({
-            "session_name": session_name,
-            "message_text": message_text,
-            "received_at": message_time
-        }))
+@client.on(events.NewMessage(chats=[channel["LINK"] for channel in user["CHANNELS"]]))
+async def handler(event):
+    """Event handler to listen for new messages from the channels"""
+    message = event.message
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
-        print(f"[{message_time}] Sent message to controller.")
+    # Normalize message text (remove extra spaces, newlines, etc.)
+    message_text = message.text.strip() if message.text else ""
 
-async def listen_for_coin_addresses():
-    """Listens for new coin addresses from Redis and forwards them to the bot chat."""
-    print("[INFO] Listening for new coin addresses...")
-    while True:
-        message = redis_subscriber.get_message()
-        if message and message["type"] == "message":
-            data = json.loads(message["data"])
-            coin_address = data.get("coin_address")
-            received_at = data.get("received_at")
-            processed_at = datetime.utcnow().strftime("%H:%M:%S.%f")[:-3]
+    # Skip empty messages
+    if not message_text:
+        return
 
-            if coin_address:
-                message_to_send = f"""
-Received: {received_at}
-Processed: {processed_at}
-Forwarded: {datetime.utcnow().strftime("%H:%M:%S.%f")[:-3]}
+    # Check if the message has already been processed in the database
+    if is_message_processed(message.id):
+        return
 
-{coin_address}
-                """.strip()
+   # Get the channel's username
+    channel_username = event.chat.username if event.chat.username else None
 
-                # Send message to bot chat
-                await client.send_message(user_details["bot_chat"], message_to_send)
-                print(f"[{processed_at}] Forwarded coin address to bot chat.")
+    # If the channel doesn't have a username, skip processing this message
+    if channel_username is None:
+        print(f"Error: Could not find username for the message from channel {event.chat.id} "
+            f"(Message ID: {message.id}, Sender ID: {message.sender_id}, Message Text: {message.text})")
+        return
 
-        await asyncio.sleep(0.1)  # Prevents busy-waiting
+    # Prepare the data to send to Redis
+    message_data = {
+        "message_id": message.id,
+        "text": message_text,
+        "from_user": user["NAME"],
+        "from_channel": channel_username,
+        "time_received": current_time  # The time the message was received
+    }
+
+    # Serialize message data into JSON format
+    message_json = json.dumps(message_data)
+
+    # Add to Redis queue
+    redis_client.rpush('messages_queue', message_json)
 
 async def main():
-    """Main function to start Telegram client and listen for messages."""
-    print(f"[INFO] Client {session_name} started, listening for messages...")
+    """Run Telegram Client Loop"""
 
-    # Start Telegram message listener
-    async with client:
-        client.add_event_handler(process_message, events.NewMessage(chats=user_details["channel"]))
-        await asyncio.gather(listen_for_coin_addresses())
+    # Start Telegram
+    print("Starting Telegram...")
+    await client.start(user["PHONE_NUMBER"])  
 
-# Run the client
-asyncio.run(main())
+    # Start Redis listener
+    print("Listening For Redis Notifications...")
+    asyncio.create_task(handle_redis_notifications())
+
+    # Run the Telegram client event loop
+    await client.run_until_disconnected()  # Keep running the client
+
+def init():
+    """Initialise Script And Fetch User Data From Database"""
+    # Command-line argument parsing
+    print("Starting script...")
+    parser = argparse.ArgumentParser(description='Telegram bot client script.')
+    parser.add_argument('--userid', required=True, help='User ID to fetch details for.')
+    args = parser.parse_args()
+    user_id = args.userid
+
+    ######################
+    ## NEED TO ADD DB VARS TO CLI
+
+    # Defining User
+    global user
+    user = {
+        "ID": "",
+        "NAME": "",
+        "API_ID": "",
+        "API_HASH": "",
+        "PHONE_NUMBER": "",
+        "BOT_CHAT": "",
+        "TEST_CHAT_LINK": "",
+        "CREATED_AT": "",
+        "CHANNELS": {
+            "ID": "",
+            "NAME": "",
+            "LINK": "",
+        }
+    }
+
+    # Connecting to Redis
+    print("Connecting to Redis...")
+    global redis_client
+    redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+    # Get user data
+    print("Fetching User Data...")
+    user_details = get_user_details(user_id)
+    
+    print("Fetching Channel Data...")
+    user_channels = get_user_channels(user_id)
+
+    # Check user and channel data exists
+    if not user_details and not user_channels:
+        print(f"User Not Found or User Has No Channels | UID: {user_id}")
+        exit(1)
+
+    # Extract user details into the global user dictionary
+    user["ID"], user["NAME"], user["API_ID"], user["API_HASH"], user["PHONE_NUMBER"], user["BOT_CHAT"], user["TEST_CHAT_LINK"], user["CREATED_AT"] = user_details
+    user["CHANNELS"] = [{"ID": channel[0], "NAME": channel[1], "LINK": channel[2]} for channel in user_channels]
+
+    # Set up the Telegram client
+    global client
+    client = TelegramClient(user["NAME"], user["API_ID"], user["API_HASH"])
+    print("Completed Init")
+
+if __name__ == '__main__':
+    init()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+
+
+# Check for args
+
+# if no arg for userid then exit
+
+# if no DB connection then exit
+
+# from DB get user details with arg id -> {}
+# from DB get user channels -> []
+
+# start telegram listening for messages in channels (list of invite links)
+
+# telegram chanel listener -> recieve message
+    # get time recieved
+    # check DB if message ID exists [yes]-> return
+    # check redis queue if message id is there [yes]-> return
+    # send message to reddis queue
+    # message {text: message.text, from_user: client_name, from_channel: channel_link, time_recieved: recieved}
+
+# Listen for notifs from queues
+    # message {ca: ADDRESS, "time_recieved: 00:00:00.000", time_processed: time.now(), from_channel: channel}
+    # if subscibed to channel [yes] -> forward message
