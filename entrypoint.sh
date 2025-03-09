@@ -21,8 +21,5 @@ echo "+===========================================================+"
 cat /app/config.json
 echo ""
 
-# Create an empty addresses.txt file
-touch /app/addresses.txt
-
 # Run the Python application
 exec python main.py
