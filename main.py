@@ -6,6 +6,10 @@ import re
 import json
 import sys
 import argparse
+import base58
+
+global test
+test = False
 
 # Get args
 parser = argparse.ArgumentParser(description="Check for CLI arguments")
@@ -58,6 +62,34 @@ def address_exists(address):
         return any(line.strip() == address for line in addresses)
     except FileNotFoundError:
         return False
+
+def log(msg):
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    print(f"[{current_time}] {msg}")
+
+def extract_solana_address(text):
+    """Extract Solana address from the text using regex"""
+    solana_address_pattern = r"[1-9A-HJ-NP-Za-km-z]{32,44}"
+    match = re.search(solana_address_pattern, text)
+    return match.group(0) if match else None
+
+def is_valid_solana_address(address):
+    """Check if a Solana address is valid"""
+    if len(address) != 44:
+        return False
+    try:
+        decoded_address = base58.b58decode(address)
+    except ValueError:
+        return False  # If the base58 decoding fails, the address is invalid
+    return len(decoded_address) == 32
+
+def combine_solana_address_parts(text):
+    """Combine two Solana address parts found in the text"""
+    parts = re.findall(r"[1-9A-HJ-NP-Za-km-z]{16,44}", text)
+
+    if len(parts) == 2:
+        return parts[0] + parts[1]
+    return ""
 
 # Function to forward filtered messages
 # VERSION 1 (NO REMOVE DETECTION)
@@ -172,12 +204,64 @@ async def forward_messageV2(message):
 # SPLIT DETECTION
 # SOLANA VALIDATE
 # TIME PRINTING
-async def forward_messageV3(message):
-    def log(msg):
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        print(f"[{current_time}] {msg}")
+async def forward_messageV3(message, sent_time):
+    # Initialize values
+    rug_pull = False
+    address = ""
+    message_text = message.text
 
-    return None
+    # Remove URLs
+    text = re.sub(r'http[s]?://\S+|www\.\S+', '', message_text)
+
+    # Check for rug-related words in text
+    if any(word in text.lower() for word in ["rug", "do not buy", "rug pull", "insta rug", "fishing"]):
+        rug_pull = True
+                        
+    # Remove all occurrences of the word "KING" from the text
+    kingless_text = re.sub(r'king', '', text, flags=re.IGNORECASE)
+
+    # Check if the text contains the word SPLIT and attempt to combine two parts
+    if "split" in kingless_text.lower():
+        log(f"Found instruction to combine split addresses")
+        address = combine_solana_address_parts(kingless_text)
+    else:
+        # Regex to extract Solana address
+        address = extract_solana_address(kingless_text)
+
+    # If no address is found
+    if not address:
+        log(f"No address found")
+        return None
+                    
+    # Validate Solana address
+    if not is_valid_solana_address(address):
+        log(f"Address {address} has already been forwarded or is invalid. Skipping.")
+        return f"Address {address} has already been forwarded or is invalid. Skipping."
+
+    # Check if address exists in addresses.txt
+    if address_exists(address):
+        log(f"Address {address} has already been forwarded or is invalid. Skipping.")
+        return f"Address {address} has already been forwarded or is invalid. Skipping."
+
+    # Save address
+    if not test:
+        save_address(address)
+
+    # If rug pull dont forward
+    if rug_pull:
+        log(f"This coin is flagged as a rug pull.")
+        return "This coin is flagged as a rug pull. Stopping processing."
+
+    log(f"Found and forwarding Solana address: {address}")
+    if not test:
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        send_message = f"""
+Received: {sent_time}
+Processed: {current_time}
+{address}
+        """
+        await client.send_message(TROJAN_BOT_CHAT_ID, f"{send_message}")
+    return address
 
 # Keep track of processed message IDs
 processed_message_ids = set()
@@ -190,6 +274,9 @@ async def handler(event):
 
     message = event.message
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    post_time = message.date
+    formatted_post_time = post_time.strftime("%Y-%m-%d %H:%M:%S.") + f"{post_time.microsecond // 1000:03d}"
+
 
     # Normalize message text (remove extra spaces, newlines, etc.)
     message_text = message.text.strip() if message.text else ""
@@ -205,7 +292,7 @@ async def handler(event):
 
     print(f"[{current_time}] Received Message: {message.id}")
     
-    await forward_messageV3(message)  # Forward the message immediately
+    await forward_messageV3(message, formatted_post_time)  # Forward the message immediately
 
 # Start the client and handle the login process
 async def main():
@@ -227,7 +314,7 @@ async def run_tests(test_data):
     # Loop and do tests
     for test in test_data:
         message = Message(test[1])
-        result = await forward_messageV3(message)
+        result = await forward_messageV3(message, "0000-00-00 00:00:00.000")
 
         if (result == test[2]):
             print(f"\033[32mTest:     {test[0]} was successful\033[0m")

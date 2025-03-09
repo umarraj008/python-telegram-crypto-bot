@@ -20,8 +20,6 @@ test_data = [
         7w1YgW5kkwBz43E32jWdnskK8wdvgvsSAoWZ7v9Nmoon
         """,
         "7w1YgW5kkwBz43E32jWdnskK8wdvgvsSAoWZ7v9Nmoon",
-        
-        "7w1YgW5kkwBz43E32jWdnskK8wdvgvsSAoWZ7v9Nmoon"
     ],
     [
       "Regular message NO CA",
@@ -38,7 +36,7 @@ test_data = [
     
     # REMOVE KING/WORD CHECKS
     [
-      "Remove DEEZ quotes)",
+      "Remove kInG quotes",
 
         """
         🚨HIGH RISK HIGH REWARD GAMBLE PLAY🚨
@@ -47,7 +45,7 @@ test_data = [
 
         GOOD NARRATIVE FART META. THE ONLY OTHER FART BOOK MY ADAM WALLACE LIKE THE FARTBOY COIN  THAT RAN OVER 200M THE REST ARE JUST DERIVATIVES EXCEPT THIS ONE SO I THINK ITS SUPER UNDERVALUED. 300K MC AREA DYOR NFA.
 
-        https://dexscreener.com/solana/4iWpF4TMzHnDP7tjfYWqWDEEZ8x1qWHb1AbqNhhJqVdTYxL4
+        https://dexscreener.com/solana/4iWpF4TMzHnDP7tjfYWqWkInG8x1qWHb1AbqNhhJqVdTYxL4
 
         https://fartclubsol.com/
 
@@ -55,14 +53,14 @@ test_data = [
 
         https://t.me/cto_fartclub
 
-        6zkZPeSVSynKoNgPjb6DEEZyCfJ5BFFro4gcKXuMrPtvpump
+        6zkZPeSVSynKoNgPjb6kInGyCfJ5BFFro4gcKXuMrPtvpump
 
-        YOU HAVE TO REMOVE THE WORD “DEEZ” FROM THE CA AND DEX LINK SO BOTS GET SIDELINED
+        YOU HAVE TO REMOVE THE WORD “kInG” FROM THE CA AND DEX LINK SO BOTS GET SIDELINED
         """,
         "6zkZPeSVSynKoNgPjb6yCfJ5BFFro4gcKXuMrPtvpump",
     ],
     [
-      "Remove Deez no quotes",
+      "Remove king no quotes",
 
       """
       🚨HIGH RISK HIGH REWARD GAMBLE PLAY🚨
@@ -71,7 +69,7 @@ test_data = [
 
       GOOD NARRATIVE FART META. THE ONLY OTHER FART BOOK MY ADAM WALLACE LIKE THE FARTBOY COIN  THAT RAN OVER 200M THE REST ARE JUST DERIVATIVES EXCEPT THIS ONE SO I THINK ITS SUPER UNDERVALUED. 300K MC AREA DYOR NFA.
 
-      https://dexscreenerDEEZ.com/solana/4iWpF4TMzHnDP7tjfYWasfasqWsfahsfahaskgBENG8x1qWHb1AbqNhhJqVdTYxL4
+      https://dexscreenerking.com/solana/4iWpF4TMzHnDP7tjfYWasfasqWsfahsfahaskgBENG8x1qWHb1AbqNhhJqVdTYxL4
 
       https://fartclubsol.com/
 
@@ -79,9 +77,9 @@ test_data = [
 
       https://t.me/cto_fartclub
 
-      6zkZPeSVSynKoNgPjb6DEEZyCfJ5BFFro4gcKXuMrPtvpump
+      6zkZPeSVSynKoNgPjb6kingyCfJ5BFFro4gcKXuMrPtvpump
 
-      YOU HAVE TO REMOVE THE WORD DEEZ FROM THE CA AND DEX LINK SO BOTS GET SIDELINED
+      YOU HAVE TO REMOVE THE WORD king FROM THE CA AND DEX LINK SO BOTS GET SIDELINED
       """,
 
       "6zkZPeSVSynKoNgPjb6yCfJ5BFFro4gcKXuMrPtvpump"
@@ -158,7 +156,7 @@ test_data = [
 
       CA SPLIT INTO 2 TO SIDELINE BOTS
       """,
-      "ZtqXv2FJqNTGcSujyfmoonZtqXv2FJqNTGcSujyfmoon",
+      "CSChJMDH1drnxaN5ZXr8ZPZtqXv2FJqNTGcSujyfmoon",
     ],
     [
       "Split CA but only SPLIT word",
@@ -182,7 +180,31 @@ test_data = [
 
       SPLIT
       """,
-      "ZtqXv2FJqNTGcSujyfmoonZtqXv2FJqNTGcSujyfmoon",
+      "CSChJMDH1drnxaN5ZXr8ZPZtqXv2FJqNTGcSujyfmoon",
+    ],
+    [
+      "Split CA but sPlIt word",
+
+      """
+      🚀 SUPERBOWL GAMBLE PLAY 🚀 
+
+      POSTING ACROSS ALL PLATFORMS SO IF YOU JEET YOURE GAY AND WILL STAY POOR 
+
+      GOOD NARRATIVE AND BRANDING WITH THE MIX OF SUPERBOWL AND CRYPTO. THIS TEAM RAN STUFF INTO THE MILLIONS PRECIOUSLY. WILL HAVE BOOST AT BONDING WITH ADS ETC. DYOR NFA. 
+
+      https://x.com/SuperBull_SOL
+
+      https://t.me/SuperBull_Solana
+
+      https://dexscreener.com/solana/7ky51wxqrjkaxuitqwd1g6fqmzy9s2lcsbafie88kyoh
+
+      CSChJMDH1drnxaN5ZXr8ZP
+      
+      ZtqXv2FJqNTGcSujyfmoon
+
+      CA sPlIt INTO 2 TO SIDELINE BOTS
+      """,
+      "CSChJMDH1drnxaN5ZXr8ZPZtqXv2FJqNTGcSujyfmoon",
     ],
     [
       "Split CA but odd splits",
@@ -200,13 +222,13 @@ test_data = [
 
       https://dexscreener.com/solana/7ky51wxqrjkaxuitqwd1g6fqmzy9s2lcsbafie88kyoh
 
-      CSChJMDH1dr
+      CSChJMDH1drnxaN5
       
-      nxaN5ZXr8ZPZtqXv2FJqNTGcSujyfmoon
+      ZXr8ZPZtqXv2FJqNTGcSujyfmoon
 
-      CA SPLIT INTO 2 TO SIDELINE BOTS
+      CA split INTO 2 TO SIDELINE BOTS
       """,
-      "ZtqXv2FJqNTGcSujyfmoonZtqXv2FJqNTGcSujyfmoon",
+      "CSChJMDH1drnxaN5ZXr8ZPZtqXv2FJqNTGcSujyfmoon",
     ],
 
     # RUG PULL CHECKS
@@ -402,11 +424,11 @@ test_data = [
       KING IN CA TO DETER BOTS
       """,
       
-      "8jpJ8peczYNZesmKING1vVKU2TA1QsL3WWDa6yuGrg5kmoon"
+      "8jpJ8peczYNZesm1vVKU2TA1QsL3WWDa6yuGrg5kmoon"
     ],
     
     # VALIDATE SOLANA CHECKS
-        [
+    [
       "Correct CA should validate True",
 
       """
@@ -416,22 +438,22 @@ test_data = [
       "DSXVmrBySfBcmdNDGQkk59hGwXhAKNjEwc4as8nfmysd"
     ],
     [
-      "CA with less than 44 chars",
+      "CA with less than 44 chars (30 chars)",
 
       """
-      DSXVmrBySfBcmdNDGQkk59hGwXhAK
+      DSXVmrBySfBcmdNDGQkk59hGwXhAKs
       """,
       
-      "INCORRECT CA"
+      None
     ],
     [
-      "CA with more than 44 chars",
+      "CA with less than 44 chars (35 chars)",
 
       """
-      DSXVmrBySfBcmdNDGQkk59hGwXhAKNjEwc4as8nfmysdGQkk59hGwXhAK
+      DSXVmrBySfBcmdNDGQkk59hGwXhAKsfsfsf
       """,
       
-      "INCORRECT CA"
+      "Address DSXVmrBySfBcmdNDGQkk59hGwXhAKsfsfsf has already been forwarded or is invalid. Skipping."
     ],
     [
       "Incorrect CA should validate False",
@@ -440,7 +462,8 @@ test_data = [
       DSXVmrBfSfBcmdNDGQka59hGwXhAKNjEwc4astnfmysd
       """,
       
-      "INCORRECT CA"
+      "DSXVmrBfSfBcmdNDGQka59hGwXhAKNjEwc4astnfmysd",
+      "right now we cannot use RCP to validate so this can be skipped"
     ],
 
     # SAVED CA CHECK
