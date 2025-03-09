@@ -341,9 +341,9 @@ async def run_tests(test_data):
     sys.exit("---END---")
 
 if __name__ == '__main__':
-    if test:
-        asyncio.run(run_tests(test_data))
-    else:
-        test = False
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main())
+    # if test:
+    #     asyncio.run(run_tests(test_data))
+    # else:
+    test = False
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
