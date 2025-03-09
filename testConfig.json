@@ -1,7 +1,9 @@
 {
-  "api_id": "",
-  "api_hash": "",
-  "phone_number": "",
+  "api_id": "20027855",
+  "api_hash": "ab5081fcbdc01d94c1d182d7ac44a020",
+  "phone_number": "+44 7399 276578",
   "trojan_bot_chat_id": "@solana_trojanbot",
-  "channel_invite_links": []
+  "channel_invite_links": [
+    "https://t.me/+J2FjYDsfcyU2NzZk"
+  ]
 }

@@ -47,7 +47,11 @@ def save_address(address):
 
 # Function to check if the address already exists in the file
 def address_exists(address):
-    if test: return False
+    if test: 
+        if address == "2eQEE6yWkAygKgwCeRq1aJcEkjBqnqkhGYo9SQDPpump": 
+            return True
+        else: 
+            return False
     try:
         with open('addresses.txt', 'r') as f:
             addresses = f.readlines()
@@ -157,6 +161,7 @@ async def forward_messageV2(message):
                 return cleaned_address
             else:
                 log(f"Address {cleaned_address} has already been forwarded or is invalid. Skipping.")
+                return f"Address {cleaned_address} has already been forwarded or is invalid. Skipping."
 
     return None  # If nothing was found
 
@@ -171,6 +176,8 @@ async def forward_messageV3(message):
     def log(msg):
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         print(f"[{current_time}] {msg}")
+
+    return None
 
 # Keep track of processed message IDs
 processed_message_ids = set()
