@@ -19,6 +19,3 @@ RUN chmod +x /app/entrypoint.sh
 
 # Set the entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
-
-# Set the default command to run your Python script (main.py)
-# CMD ["python", "main.py"]
