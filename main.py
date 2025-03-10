@@ -204,7 +204,7 @@ async def forward_messageV2(message):
 # SPLIT DETECTION
 # SOLANA VALIDATE
 # TIME PRINTING
-async def forward_messageV3(message, sent_time):
+async def forward_messageV3(message):
     # Initialize values
     rug_pull = False
     address = ""
@@ -254,13 +254,7 @@ async def forward_messageV3(message, sent_time):
 
     log(f"Found and forwarding Solana address: {address}")
     if not test:
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        send_message = f"""
-Received: {sent_time}
-Processed: {current_time}
-{address}
-        """
-        await client.send_message(TROJAN_BOT_CHAT_ID, f"{send_message}")
+        await client.send_message(TROJAN_BOT_CHAT_ID, address)
     return address
 
 # Keep track of processed message IDs
@@ -274,9 +268,6 @@ async def handler(event):
 
     message = event.message
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-    post_time = message.date
-    formatted_post_time = post_time.strftime("%Y-%m-%d %H:%M:%S.") + f"{post_time.microsecond // 1000:03d}"
-
 
     # Normalize message text (remove extra spaces, newlines, etc.)
     message_text = message.text.strip() if message.text else ""
@@ -292,7 +283,7 @@ async def handler(event):
 
     print(f"[{current_time}] Received Message: {message.id}")
     
-    await forward_messageV3(message, formatted_post_time)  # Forward the message immediately
+    await forward_messageV3(message)  # Forward the message immediately
 
 # Start the client and handle the login process
 async def main():
@@ -314,7 +305,7 @@ async def run_tests(test_data):
     # Loop and do tests
     for test in test_data:
         message = Message(test[1])
-        result = await forward_messageV3(message, "0000-00-00 00:00:00.000")
+        result = await forward_messageV3(message)
 
         if (result == test[2]):
             print(f"\033[32mTest:     {test[0]} was successful\033[0m")
