@@ -62,6 +62,11 @@ docker rm NAME
 docker attach NAME
 ```
 
+#### Copying addresses.txt to container
+```
+docker cp addresses.txt <name>:/app/addresses.txt
+```
+
 Exit Interact
 ```
 Exit -> Ctrl + P -> Ctrl + Q
