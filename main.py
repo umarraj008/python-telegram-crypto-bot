@@ -35,6 +35,12 @@ api_id = config['api_id']
 api_hash = config['api_hash']
 phone_number = config['phone_number']
 
+# Yeezus Sender ID
+TARGET_USERNAME = "CRYPTOYEEZUSSSS"
+
+# Umar Sender ID
+# TARGET_USERNAME = "Umarraj008"
+
 # Trojan bot's chat ID or username
 TROJAN_BOT_CHAT_ID = config['trojan_bot_chat_id']
 
@@ -74,13 +80,13 @@ def extract_solana_address(text):
     return match.group(0) if match else None
 
 def is_valid_solana_address(address):
-    """Check if a Solana address is valid"""
-    if len(address) != 44:
+    """Check if a Solana address is a valid base58-encoded 32-byte string"""
+    if len(address) not in (43, 44):
         return False
     try:
         decoded_address = base58.b58decode(address)
     except ValueError:
-        return False  # If the base58 decoding fails, the address is invalid
+        return False  # Base58 decoding failed
     return len(decoded_address) == 32
 
 def combine_solana_address_parts(text):
@@ -277,6 +283,17 @@ async def handler(event):
         print(f"[{current_time}] Message {message.id} already processed, skipping.")
         return  # Skip duplicate messages
 
+   # If from group, check if it's from the correct username
+    if event.is_group or (event.is_channel and not event.chat.broadcast):  # i.e., it's a megagroup
+        sender = await message.get_sender()
+        sender_username = sender.username.lower() if sender.username else None
+
+        print(f"Sender Username: {sender_username}")
+
+        if sender_username != TARGET_USERNAME.lower():
+            print(f"[{current_time}] Message {message.id} not from target username, skipping.")
+            return
+
     # Update last message content **before processing**
     lastMessage = message_text
     processed_message_ids.add(message.id)
@@ -289,6 +306,12 @@ async def handler(event):
 async def main():
     await client.start(phone_number)  # Login using your phone number
     print("Client started, listening for messages...")
+    
+    # Find users sender_id
+    # user = await client.get_entity('Umarraj008')  # Without the @
+    # print(f"User ID: {user.id}")
+    # sys.exit()
+    
     await client.run_until_disconnected()  # Keep the client running
 
 async def run_tests(test_data):
