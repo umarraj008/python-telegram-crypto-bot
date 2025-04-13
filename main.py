@@ -34,9 +34,11 @@ config = load_config()
 api_id = config['api_id']
 api_hash = config['api_hash']
 phone_number = config['phone_number']
+allowed_users = config['allowed_users']
 
 # Yeezus Sender ID
 TARGET_USERNAME = "CRYPTOYEEZUSSSS"
+
 
 # Umar Sender ID
 # TARGET_USERNAME = "Umarraj008"
@@ -267,7 +269,7 @@ async def forward_messageV3(message):
 processed_message_ids = set()
 lastMessage = ""
 
-# Set up event handler to listen for new messages from the channels
+#Set up event handler to listen for new messages from the channels
 @client.on(events.NewMessage(chats=channel_invite_links))  # Listen for new messages from multiple channels
 async def handler(event):
     global lastMessage  
@@ -288,10 +290,11 @@ async def handler(event):
         sender = await message.get_sender()
         sender_username = sender.username.lower() if sender.username else None
 
-        print(f"Sender Username: {sender_username}")
+        #print(f"Sender Username: {sender_username}")
+        print(f"[{current_time}] Message {message.id} | {message.text}")
 
-        if sender_username != TARGET_USERNAME.lower():
-            print(f"[{current_time}] Message {message.id} not from target username, skipping.")
+        if sender_username not in [username.lower() for username in allowed_users]:
+            #print(f"[{current_time}] Message {message.id} not from target username, skipping.")
             return
 
     # Update last message content **before processing**
@@ -300,15 +303,21 @@ async def handler(event):
 
     print(f"[{current_time}] Received Message: {message.id}")
     
-    await forward_messageV3(message)  # Forward the message immediately
+    #await forward_messageV3(message)  # Forward the message immediately
 
 # Start the client and handle the login process
 async def main():
     await client.start(phone_number)  # Login using your phone number
-    print("Client started, listening for messages...")
+    
+    #FIND CHAT IDS
+    # print("Client started, listening for messages...")
+    # all_chats = await client.get_dialogs()
+    # for chat in all_chats:
+    #     if chat.is_group:
+    #         print(f"Group Name: {chat.name} | Group ID: {chat.id}")
     
     # Find users sender_id
-    # user = await client.get_entity('Umarraj008')  # Without the @
+    # user = await client.get_entity('@fiorenzonsol')  # Without the @
     # print(f"User ID: {user.id}")
     # sys.exit()
     

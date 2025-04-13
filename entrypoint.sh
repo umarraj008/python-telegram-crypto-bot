@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Check if UPDATE=true
-if [ "$UPDATE" == "true" ]; then
-    echo "Running in update mode. Skipping Python script execution."
-    # Keep the container running without executing the Python script
-    tail -f /dev/null  # This will keep the container running indefinitely
-    exit 0  # Exit so the Python script doesn't run
-fi
+# if [ "$UPDATE" == "true" ]; then
+#     echo "Running in update mode. Skipping Python script execution."
+#     # Keep the container running without executing the Python script
+#     tail -f /dev/null  # This will keep the container running indefinitely
+#     exit 0  # Exit so the Python script doesn't run
+# fi
 
 # Printing Env Data
 echo "+===========================================================+"
@@ -34,12 +34,13 @@ while true; do
     if [ -z "$INVITE_URL" ]; then
         break  # Stop if we find an empty or unset value
     fi
-    
-    # Add the URL to the array with quotes
-    if [ ${#CHANNEL_INVITE_LINKS[@]} -gt 0 ]; then
-        # Add a comma before adding the next item
-        CHANNEL_INVITE_LINKS+=(", \"$INVITE_URL\"")
+
+    # Check if the invite URL is numeric (and not a string)
+    if [[ "$INVITE_URL" =~ ^-?[0-9]+$ ]]; then
+        # If it's numeric, append it without quotes
+        CHANNEL_INVITE_LINKS+=("$INVITE_URL")
     else
+        # If it's not numeric, treat it as a string and add quotes
         CHANNEL_INVITE_LINKS+=("\"$INVITE_URL\"")
     fi
     
@@ -50,11 +51,39 @@ done
 # Construct the final JSON array from the invite links
 FINAL_CHANNEL_INVITE_LINKS="[${CHANNEL_INVITE_LINKS[@]}]"
 
+# Initialize an empty array to store allowed users
+ALLOWED_USERS=()
+
+# Loop to dynamically add each environment variable for allowed users
+j=1
+while true; do
+    USER_VAR="ALLOWED_USER_$j"
+    USERNAME="${!USER_VAR}"
+    
+    if [ -z "$USERNAME" ]; then
+        break  # Stop if we find an empty or unset value
+    fi
+    
+    # Add the username to the array with quotes
+    if [ ${#ALLOWED_USERS[@]} -gt 0 ]; then
+        # Add a comma before adding the next item
+        ALLOWED_USERS+=(", \"$USERNAME\"")
+    else
+        ALLOWED_USERS+=("\"$USERNAME\"")
+    fi
+    
+    # Increment the counter for the next variable
+    ((j++))
+done
+
+# Construct the final JSON array from the allowed users
+FINAL_ALLOWED_USERS="[${ALLOWED_USERS[@]}]"
+
 # Debugging: show the final constructed array
 echo "Final constructed CHANNEL_INVITE_LINKS: $FINAL_CHANNEL_INVITE_LINKS"
 
 # Replace placeholders in config.json with environment variables
-echo "{\"api_id\": \"$API_ID\", \"api_hash\": \"$API_HASH\", \"phone_number\": \"$PHONE_NUMBER\", \"trojan_bot_chat_id\": \"$TROJAN_BOT_CHAT_ID\", \"channel_invite_links\": $FINAL_CHANNEL_INVITE_LINKS}" > /app/config.json
+echo "{\"api_id\": \"$API_ID\", \"api_hash\": \"$API_HASH\", \"phone_number\": \"$PHONE_NUMBER\", \"trojan_bot_chat_id\": \"$TROJAN_BOT_CHAT_ID\", \"channel_invite_links\": $FINAL_CHANNEL_INVITE_LINKS, \"allowed_users\": $FINAL_ALLOWED_USERS}" > /app/config.json
 
 # Debugging: print the content of config.json
 echo "+===========================================================+"
