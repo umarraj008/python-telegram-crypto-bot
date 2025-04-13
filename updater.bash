@@ -30,10 +30,10 @@ docker inspect "$CONTAINER_NAME" | jq -r '.[0].Config.Env[]' | grep -v '7399' > 
 echo "Pulling image: $IMAGE..."
 docker pull "$IMAGE"
 
-# 3. Create the new container (paused using sleep)
+# 3. Create the new container with the updated image and environment variables
 echo "Creating new container with image $IMAGE and preserved environment variables..."
 ENV_FLAGS=$(cat "$TEMP_DIR/env_vars.txt" | sed 's/^/--env /' | xargs)
-docker create --name "$NEW_CONTAINER_NAME" $ENV_FLAGS "$IMAGE" sleep infinity
+docker create --name "$NEW_CONTAINER_NAME" $ENV_FLAGS "$IMAGE"
 
 # 4. Copy essential files into the new container
 echo "Copying files into new container..."
@@ -44,14 +44,12 @@ docker cp "$TEMP_DIR/session_name.session" "$NEW_CONTAINER_NAME":/app/session_na
 echo "Cleaning up temporary files..."
 rm -rf "$TEMP_DIR"
 
-# 6. Start the new container and run the app
-echo "Starting new container and launching app..."
-docker start "$NEW_CONTAINER_NAME"
-docker exec -d "$NEW_CONTAINER_NAME" /app/entrypoint.sh
-
-# 7. Stop and remove the old container after successful creation of the new one
-echo "Stopping and removing the old container..."
+# 6. Stop and the old container after successful creation of the new one
+echo "Stopping the old container..."
 docker stop "$CONTAINER_NAME"
-docker rm "$CONTAINER_NAME"
+
+# 7. Start the new container (this will trigger the entrypoint)
+echo "Starting new container..."
+docker start "$NEW_CONTAINER_NAME"
 
 echo "Update complete: $CONTAINER_NAME has been replaced by $NEW_CONTAINER_NAME with image $IMAGE."
