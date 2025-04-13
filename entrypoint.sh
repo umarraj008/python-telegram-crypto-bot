@@ -55,11 +55,5 @@ echo "+===========================================================+"
 cat /app/config.json
 echo ""
 
-# Check the value of the UPDATE variable
-if [ "$UPDATE" == "true" ]; then
-    echo "Update mode is enabled. Skipping Python script execution."
-else
-    # If UPDATE is not true (or is false), run the Python application
-    echo "Running the Python application..."
-    exec python main.py
-fi
+# Run the Python application
+exec python main.py
