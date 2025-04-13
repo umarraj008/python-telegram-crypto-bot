@@ -288,10 +288,10 @@ async def handler(event):
         sender = await message.get_sender()
         sender_username = sender.username.lower() if sender.username else None
 
-        print(f"Sender Username: {sender_username}")
+        #print(f"Sender Username: {sender_username}")
 
         if sender_username != TARGET_USERNAME.lower():
-            print(f"[{current_time}] Message {message.id} not from target username, skipping.")
+            #print(f"[{current_time}] Message {message.id} not from target username, skipping.")
             return
 
     # Update last message content **before processing**
