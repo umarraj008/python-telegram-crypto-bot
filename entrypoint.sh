@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Check if UPDATE=true
+if [ "$UPDATE" == "true" ]; then
+    echo "Running in update mode. Skipping Python script execution."
+    # Keep the container running without executing the Python script
+    tail -f /dev/null  # This will keep the container running indefinitely
+    exit 0  # Exit so the Python script doesn't run
+fi
+
 # Printing Env Data
 echo "+===========================================================+"
 echo "Hostname: $HOSTNAME"
