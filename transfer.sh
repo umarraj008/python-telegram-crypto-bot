@@ -28,19 +28,19 @@ docker cp "$FROM_CONTAINER":/app/session_name.session "$TEMP_DIR/session_name.se
 echo "Stopping source container '$FROM_CONTAINER'..."
 docker stop "$FROM_CONTAINER"
 
-# 3. Start the destination container
-echo "Starting destination container '$TO_CONTAINER'..."
-docker start "$TO_CONTAINER"
-
-# 4. Copy the files into the new container
+# 3. Copy the files into the new container
 echo "Copying addresses.txt to $TO_CONTAINER..."
 docker cp "$TEMP_DIR/addresses.txt" "$TO_CONTAINER":/app/addresses.txt || echo "Warning: addresses.txt not copied"
 
 echo "Copying session_name.session to $TO_CONTAINER..."
 docker cp "$TEMP_DIR/session_name.session" "$TO_CONTAINER":/app/session_name.session || echo "Warning: session_name.session not copied"
 
-# 5. Clean up the temporary directory
+# 4. Clean up the temporary directory
 echo "Cleaning up temporary files..."
 rm -rf "$TEMP_DIR"
+
+# 5. Start the destination container
+echo "Starting destination container '$TO_CONTAINER'..."
+docker start "$TO_CONTAINER"
 
 echo "Transfer complete: $FROM_CONTAINER stopped, $TO_CONTAINER started and updated with new files."
