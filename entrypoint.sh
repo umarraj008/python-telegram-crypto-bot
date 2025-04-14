@@ -30,23 +30,34 @@ i=1
 while true; do
     INVITE_VAR="CHANNEL_INVITE_LINK_$i"
     INVITE_URL="${!INVITE_VAR}"
-    
+
     if [ -z "$INVITE_URL" ]; then
         break  # Stop if we find an empty or unset value
     fi
 
-    # Check if the invite URL is numeric (and not a string)
+    # Check if the link is numeric (this is for numerical values like chat IDs)
     if [[ "$INVITE_URL" =~ ^-?[0-9]+$ ]]; then
-        # If it's numeric, append it without quotes
-        CHANNEL_INVITE_LINKS+=("$INVITE_URL")
+        # If it's a number, don't add quotes around it
+        if [ ${#CHANNEL_INVITE_LINKS[@]} -gt 0 ]; then
+            CHANNEL_INVITE_LINKS+=(", $INVITE_URL")
+        else
+            CHANNEL_INVITE_LINKS+=("$INVITE_URL")
+        fi
     else
-        # If it's not numeric, treat it as a string and add quotes
-        CHANNEL_INVITE_LINKS+=("\"$INVITE_URL\"")
+        # If it's not a number, add quotes around the URL
+        if [ ${#CHANNEL_INVITE_LINKS[@]} -gt 0 ]; then
+            CHANNEL_INVITE_LINKS+=(", \"$INVITE_URL\"")
+        else
+            CHANNEL_INVITE_LINKS+=("\"$INVITE_URL\"")
+        fi
     fi
-    
+
     # Increment the counter for the next variable
     ((i++))
 done
+
+# Construct the final JSON array from the invite links
+FINAL_CHANNEL_INVITE_LINKS="[${CHANNEL_INVITE_LINKS[@]}]"
 
 # Construct the final JSON array from the invite links
 FINAL_CHANNEL_INVITE_LINKS="[${CHANNEL_INVITE_LINKS[@]}]"
