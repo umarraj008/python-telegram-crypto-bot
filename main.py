@@ -290,12 +290,12 @@ async def handler(event):
         sender_username = sender.username.lower() if sender.username else None
 
         #print(f"Sender Username: {sender_username}")
-        print(f"[{current_time}] Message {message.id} | {message.text}")
+        #print(f"[{current_time}] Message {message.id} | {message.text}")
 
         if sender_username not in [username.lower() for username in allowed_users]:
             #print(f"[{current_time}] Message {message.id} not from target username, skipping.")
             return
-        print(f"[{current_time}] SPECIAL Message FROM ALLOWED USER {message.id} | {message.text}")
+        #print(f"[{current_time}] SPECIAL Message FROM ALLOWED USER {message.id} | {message.text}")
 
     # Update last message content **before processing**
     lastMessage = message_text
@@ -303,7 +303,7 @@ async def handler(event):
 
     print(f"[{current_time}] Received Message: {message.id}")
     
-    #await forward_messageV3(message)  # Forward the message immediately
+    await forward_messageV3(message)  # Forward the message immediately
 
 # Start the client and handle the login process
 async def main():
