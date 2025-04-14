@@ -296,6 +296,7 @@ async def handler(event):
         if sender_username not in [username.lower() for username in allowed_users]:
             #print(f"[{current_time}] Message {message.id} not from target username, skipping.")
             return
+        print(f"[{current_time}] SPECIAL Message FROM ALLOWED USER {message.id} | {message.text}")
 
     # Update last message content **before processing**
     lastMessage = message_text
