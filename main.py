@@ -37,8 +37,7 @@ phone_number = config['phone_number']
 allowed_users = config['allowed_users']
 
 # Yeezus Sender ID
-TARGET_USERNAME = "CRYPTOYEEZUSSSS"
-
+# TARGET_USERNAME = "CRYPTOYEEZUSSSS"
 
 # Umar Sender ID
 # TARGET_USERNAME = "Umarraj008"
