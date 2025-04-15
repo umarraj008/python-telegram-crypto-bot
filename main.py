@@ -4,11 +4,12 @@ import asyncio
 import re
 import json
 import base58
-from Bot import BotCommunicator
+# from Bot import BotCommunicator
+from typing import List
 
 # Load configuration from the config.json file
 def load_config():
-    configFile = "testConfig.json"
+    configFile = "config.json"
 
     with open(configFile, 'r') as f:
         return json.load(f)
@@ -21,12 +22,6 @@ api_id = config['api_id']
 api_hash = config['api_hash']
 phone_number = config['phone_number']
 allowed_users = config['allowed_users']
-
-# Yeezus Sender ID
-# TARGET_USERNAME = "CRYPTOYEEZUSSSS"
-
-# Umar Sender ID
-# TARGET_USERNAME = "Umarraj008"
 
 # Trojan bot's chat ID or username
 TROJAN_BOT_CHAT_ID = config['trojan_bot_chat_id']
@@ -82,6 +77,19 @@ def combine_solana_address_parts(text):
     if len(parts) == 2:
         return parts[0] + parts[1]
     return ""
+
+def find_possible_split_parts(text: str) -> List[str]:
+    """
+    Looks for two consecutive base58 strings that together form a valid Solana address.
+    Returns a list with two parts if a valid pair is found, else empty list.
+    """
+    BASE58_REGEX = r"[1-9A-HJ-NP-Za-km-z]+" 
+    tokens = re.findall(BASE58_REGEX, text)
+    for i in range(len(tokens) - 1):
+        combined = tokens[i] + tokens[i + 1]
+        if 32 <= len(combined) <= 44 and is_valid_solana_address(combined):
+            return [tokens[i], tokens[i + 1]]
+    return []
 
 # Function to forward filtered messages
 # VERSION 1 (NO REMOVE DETECTION)
@@ -209,13 +217,18 @@ async def forward_messageV3(message):
     # Remove all occurrences of the word "KING" from the text
     kingless_text = re.sub(r'king', '', text, flags=re.IGNORECASE)
 
-    # Check if the text contains the word SPLIT and attempt to combine two parts
-    if "split" in kingless_text.lower():
-        log(f"Found instruction to combine split addresses")
+    # Try extracting the address
+    address = extract_solana_address(kingless_text)
+
+    if not address:
+        parts = find_possible_split_parts(kingless_text)
+
+        if parts:
+            address = parts[0] + parts[1]
+            log(f"Detected split address parts and combined: {address}")
+
+    if not address:
         address = combine_solana_address_parts(kingless_text)
-    else:
-        # Regex to extract Solana address
-        address = extract_solana_address(kingless_text)
 
     # If no address is found
     if not address:
@@ -257,14 +270,19 @@ async def handler(event):
 
     # Check if message ID or content has already been processed
     if message.id in processed_message_ids or lastMessage == message_text:
-        print(f"[{current_time}] Message {message.id} already processed, skipping.")
+        #print(f"[{current_time}] Message {message.id} already processed, skipping.")
         return  # Skip duplicate messages
 
    # If from group, check if it's from the correct username
     if event.is_group or (event.is_channel and not event.chat.broadcast):  # i.e., it's a megagroup
         sender = await message.get_sender()
-        sender_username = sender.username.lower() if sender.username else None
 
+        if sender is None:
+            #print(f"[{current_time}] Message {message.id} has no sender, skipping.")
+            return
+
+        sender_username = sender.username.lower() if sender.username else None
+        
         #print(f"Sender Username: {sender_username}")
         #print(f"[{current_time}] Message {message.id} | {message.text}")
 
@@ -277,9 +295,10 @@ async def handler(event):
     lastMessage = message_text
     processed_message_ids.add(message.id)
 
-    print(f"[{current_time}] Received Message: {message.id}")
+    # TODO add from channel/chat and username
+    print(f"[{current_time}] Received Message: {message.id} | {sender_username}")
     
-    #await forward_messageV3(message)  # Forward the message immediately
+    await forward_messageV3(message)  # Forward the message immediately
 
 async def find_group_chat_id():
     all_chats = await client.get_dialogs()
@@ -309,16 +328,16 @@ async def main():
     bot_channel_id = await find_channel()
     
     # Create Bot
-    if bot_channel_id:
-        global botCommunicator
-        botCommunicator = BotCommunicator(client, bot_channel_id, "**🛠 Sniper King V2.2**")
-        await botCommunicator.send_welcome_message()
+    # if bot_channel_id:
+    #     global botCommunicator
+    #     botCommunicator = BotCommunicator(client, bot_channel_id, "**🛠 Sniper King V2.2**")
+    #     await botCommunicator.send_welcome_message()
 
-        @client.on(events.NewMessage(chats=bot_channel_id))
-        async def handler(event):
-            message = event.message
-            message_text = message.text.strip() if message.text else ""
-            await botCommunicator.input(message_text)
+    #     @client.on(events.NewMessage(chats=bot_channel_id))
+    #     async def handler(event):
+    #         message = event.message
+    #         message_text = message.text.strip() if message.text else ""
+    #         await botCommunicator.input(message_text)
 
     await client.run_until_disconnected()  # Keep the client running
 
