@@ -6,6 +6,7 @@ session_name.session
 session_name.session-journal
 system_usage.log
 tests.py
+test.py
 readme.md
 changelog.md
 updater.bash

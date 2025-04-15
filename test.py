@@ -1,15 +1,28 @@
 from telethon import TelegramClient, events
 from datetime import datetime
+# from tests import test_data
 import asyncio
 import re
 import json
+import sys
+import argparse
 import base58
-# from Bot import BotCommunicator
-from typing import List
+
+global test
+test = False
+
+# Get args
+parser = argparse.ArgumentParser(description="Check for CLI arguments")
+parser.add_argument('arg1', nargs='?', help="First argument")
+args = parser.parse_args()
+
+if args.arg1 == "test":
+    test = True
 
 # Load configuration from the config.json file
 def load_config():
     configFile = "config.json"
+    if test: configFile = "testConfig.json"
 
     with open(configFile, 'r') as f:
         return json.load(f)
@@ -23,15 +36,17 @@ api_hash = config['api_hash']
 phone_number = config['phone_number']
 allowed_users = config['allowed_users']
 
+# Yeezus Sender ID
+# TARGET_USERNAME = "CRYPTOYEEZUSSSS"
+
+# Umar Sender ID
+# TARGET_USERNAME = "Umarraj008"
+
 # Trojan bot's chat ID or username
 TROJAN_BOT_CHAT_ID = config['trojan_bot_chat_id']
 
 # List of private channel invite links
 channel_invite_links = config['channel_invite_links']
-
-# Keep track of processed message IDs
-processed_message_ids = set()
-lastMessage = ""
 
 # Set up the Telegram client
 client = TelegramClient('session_name', api_id, api_hash)
@@ -43,6 +58,11 @@ def save_address(address):
 
 # Function to check if the address already exists in the file
 def address_exists(address):
+    if test: 
+        if address == "2eQEE6yWkAygKgwCeRq1aJcEkjBqnqkhGYo9SQDPpump": 
+            return True
+        else: 
+            return False
     try:
         with open('addresses.txt', 'r') as f:
             addresses = f.readlines()
@@ -77,19 +97,6 @@ def combine_solana_address_parts(text):
     if len(parts) == 2:
         return parts[0] + parts[1]
     return ""
-
-def find_possible_split_parts(text: str) -> List[str]:
-    """
-    Looks for two consecutive base58 strings that together form a valid Solana address.
-    Returns a list with two parts if a valid pair is found, else empty list.
-    """
-    BASE58_REGEX = r"[1-9A-HJ-NP-Za-km-z]+" 
-    tokens = re.findall(BASE58_REGEX, text)
-    for i in range(len(tokens) - 1):
-        combined = tokens[i] + tokens[i + 1]
-        if 32 <= len(combined) <= 44 and is_valid_solana_address(combined):
-            return [tokens[i], tokens[i + 1]]
-    return []
 
 # Function to forward filtered messages
 # VERSION 1 (NO REMOVE DETECTION)
@@ -164,6 +171,7 @@ async def forward_messageV2(message):
     #     if len(dex_address) == 44:  # Ensure it's still valid after removal
     #         log(f"Sending DexScreener address to client: {dex_address}")
     #         await client.send_message(TROJAN_BOT_CHAT_ID, f"{dex_address}")
+            # if not test:
     #         save_address(dex_address)
     #         return dex_address
     #     else:
@@ -185,8 +193,10 @@ async def forward_messageV2(message):
 
             if len(cleaned_address) == 44 and not address_exists(cleaned_address):
                 log(f"Found and forwarding Solana address: {cleaned_address}")
-                await client.send_message(TROJAN_BOT_CHAT_ID, f"{cleaned_address}")
-                save_address(cleaned_address)
+
+                if not test:
+                    await client.send_message(TROJAN_BOT_CHAT_ID, f"{cleaned_address}")
+                    save_address(cleaned_address)
                 return cleaned_address
             else:
                 log(f"Address {cleaned_address} has already been forwarded or is invalid. Skipping.")
@@ -217,18 +227,13 @@ async def forward_messageV3(message):
     # Remove all occurrences of the word "KING" from the text
     kingless_text = re.sub(r'king', '', text, flags=re.IGNORECASE)
 
-    # Try extracting the address
-    address = extract_solana_address(kingless_text)
-
-    if not address:
-        parts = find_possible_split_parts(kingless_text)
-
-        if parts:
-            address = parts[0] + parts[1]
-            log(f"Detected split address parts and combined: {address}")
-
-    if not address:
+    # Check if the text contains the word SPLIT and attempt to combine two parts
+    if "split" in kingless_text.lower():
+        log(f"Found instruction to combine split addresses")
         address = combine_solana_address_parts(kingless_text)
+    else:
+        # Regex to extract Solana address
+        address = extract_solana_address(kingless_text)
 
     # If no address is found
     if not address:
@@ -246,7 +251,8 @@ async def forward_messageV3(message):
         return f"Address {address} has already been forwarded or is invalid. Skipping."
 
     # Save address
-    save_address(address)
+    if not test:
+        save_address(address)
 
     # If rug pull dont forward
     if rug_pull:
@@ -254,8 +260,66 @@ async def forward_messageV3(message):
         return "This coin is flagged as a rug pull. Stopping processing."
 
     log(f"Found and forwarding Solana address: {address}")
-    await client.send_message(TROJAN_BOT_CHAT_ID, address)
+    if not test:
+        await client.send_message(TROJAN_BOT_CHAT_ID, address)
     return address
+
+# Function to check if user is part of the channel
+async def check_and_create_channel(user_id, channel_name):
+    try:
+        # Check if the user is already a member of the channel
+        channel = await client.get_entity(channel_name)
+        user = await client.get_entity(user_id)
+
+        # Try to get the participant list and check if user is a member
+        participants = await client.get_participants(channel)
+        if user in participants:
+            print("User is already a member of the channel.")
+        else:
+            print("User is not a member. Creating the channel...")
+            await create_private_channel(user_id, channel_name)
+            
+    except ValueError:
+        print(f"Channel with name {channel_name} does not exist. Creating it...")
+        await create_private_channel(user_id, channel_name)
+
+# Function to create a new private channel with the user as the owner
+async def create_private_channel(user_id, channel_name):
+    try:
+        # Create the private channel
+        result = await client.create_channel(
+            channel_name,
+            is_private=True,
+            user_ids=[user_id]
+        )
+        
+        print(f"Private channel '{channel_name}' created successfully.")
+        # Send a welcome message or further instructions here
+        await client.send_message(user_id, f"Welcome! You are now the owner of the private channel: {channel_name}")
+        
+    except PeerFloodError:
+        print("Error: Too many requests to create channels. Please wait and try again.")
+    except UserAlreadyParticipantError:
+        print(f"User {user_id} is already a participant in the channel.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+
+# Function to interact with the bot using the BotCommunicator
+async def interact_with_bot(user_id):
+    # This is where you would integrate your BotCommunicator logic
+    bot_communicator = BotCommunicator()  # Assuming you already have the BotCommunicator logic available
+
+    while True:
+        # Display the current page (could be interactive, depending on your setup)
+        bot_communicator.display()
+
+        # Get user input and pass it to the BotCommunicator
+        user_input = input("Enter your message: ").strip()
+        bot_communicator.input(user_input)
+
+# Keep track of processed message IDs
+processed_message_ids = set()
+lastMessage = ""
 
 #Set up event handler to listen for new messages from the channels
 @client.on(events.NewMessage(chats=channel_invite_links))  # Listen for new messages from multiple channels
@@ -270,19 +334,14 @@ async def handler(event):
 
     # Check if message ID or content has already been processed
     if message.id in processed_message_ids or lastMessage == message_text:
-        #print(f"[{current_time}] Message {message.id} already processed, skipping.")
+        print(f"[{current_time}] Message {message.id} already processed, skipping.")
         return  # Skip duplicate messages
 
    # If from group, check if it's from the correct username
     if event.is_group or (event.is_channel and not event.chat.broadcast):  # i.e., it's a megagroup
         sender = await message.get_sender()
-
-        if sender is None:
-            #print(f"[{current_time}] Message {message.id} has no sender, skipping.")
-            return
-
         sender_username = sender.username.lower() if sender.username else None
-        
+
         #print(f"Sender Username: {sender_username}")
         #print(f"[{current_time}] Message {message.id} | {message.text}")
 
@@ -295,52 +354,72 @@ async def handler(event):
     lastMessage = message_text
     processed_message_ids.add(message.id)
 
-    # TODO add from channel/chat and username
-    print(f"[{current_time}] Received Message: {message.id} | {sender_username}")
+    print(f"[{current_time}] Received Message: {message.id}")
     
     await forward_messageV3(message)  # Forward the message immediately
-
-async def find_group_chat_id():
-    all_chats = await client.get_dialogs()
-    for chat in all_chats:
-        if chat.is_group:
-            return f"Group Name: {chat.name} | Group ID: {chat.id}"
-
-async def find_user_id(username=""):
-    user = await client.get_entity(username)
-    return user.id
-
-async def find_channel():
-    all_chats = await client.get_dialogs()
-    for chat in all_chats:
-        if chat.name == "Sniper King Bot":
-            return chat.id
-    print("Channel not found.")
-    return None
 
 # Start the client and handle the login process
 async def main():
     await client.start(phone_number)  # Login using your phone number
-    print("Client started, listening for messages...")
-
-    # Find the channel ID
-    global bot_channel_id
-    bot_channel_id = await find_channel()
     
-    # Create Bot
-    # if bot_channel_id:
-    #     global botCommunicator
-    #     botCommunicator = BotCommunicator(client, bot_channel_id, "**🛠 Sniper King V2.2**")
-    #     await botCommunicator.send_welcome_message()
-
-    #     @client.on(events.NewMessage(chats=bot_channel_id))
-    #     async def handler(event):
-    #         message = event.message
-    #         message_text = message.text.strip() if message.text else ""
-    #         await botCommunicator.input(message_text)
-
+    #FIND CHAT IDS
+    # print("Client started, listening for messages...")
+    # all_chats = await client.get_dialogs()
+    # for chat in all_chats:
+    #     if chat.is_group:
+    #         print(f"Group Name: {chat.name} | Group ID: {chat.id}")
+    
+    # Find users sender_id
+    # user = await client.get_entity('@fiorenzonsol')  # Without the @
+    # print(f"User ID: {user.id}")
+    # sys.exit()
+    
     await client.run_until_disconnected()  # Keep the client running
 
+async def run_tests(test_data):
+    print("---TEST MODE---")
+    print("----------------------------------------------------------------------------------")
+
+    # Define Message class
+    class Message:
+        def __init__(self, text):
+            self.text = text
+
+    passes = 0
+
+    # Loop and do tests
+    for test in test_data:
+        message = Message(test[1])
+        result = await forward_messageV3(message)
+
+        if (result == test[2]):
+            print(f"\033[32mTest:     {test[0]} was successful\033[0m")
+            print(f"\033[32mExpected: {test[2]}\033[0m")
+            print(f"\033[32mReceived: {result}\033[0m")
+            passes += 1
+        else:
+            print(f"\033[31mTest:     {test[0]} Failed\033[0m")
+            print(f"\033[31mExpected: {test[2]}\033[0m")
+            print(f"\033[31mReceived: {result}\033[0m")
+               
+        print("----------------------------------------------------------------------------------")
+
+    print("")
+
+    if passes == len(test_data):
+        print(f"\033[32mAll Tests Passed!\033[0m")
+        print(f"\033[32m{passes} / {len(test_data)} passed.\033[0m")
+    else:
+        print(f"\033[31mTests Failed!\033[0m")
+        print(f"\033[31m{passes} / {len(test_data)} passed.\033[0m")
+
+    print("")
+    sys.exit("---END---")
+
 if __name__ == '__main__':
+    # if test:
+    #     asyncio.run(run_tests(test_data))
+    # else:
+    test = False
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
