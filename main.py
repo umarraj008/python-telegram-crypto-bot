@@ -324,8 +324,8 @@ async def main():
     print("Client started, listening for messages...")
 
     # Find the channel ID
-    global bot_channel_id
-    bot_channel_id = await find_channel()
+    # global bot_channel_id
+    # bot_channel_id = await find_channel()
     
     # Create Bot
     # if bot_channel_id:
