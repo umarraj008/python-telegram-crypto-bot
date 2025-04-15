@@ -2,6 +2,13 @@
 
 All notable changes to this project are listed below.
 
+**[v3-alpha]**
+- Integrated bot controller
+
+**[v2.3]**
+- Fixed group chat bug
+- Updated split CA detection
+
 **[v2.2]**
 - Added support for **private groups** and **channels**
 - Now using **dynamic list** to only allow messages from **select users**
