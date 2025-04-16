@@ -271,33 +271,32 @@ async def handler(event):
     # Check if message ID or content has already been processed
     if message.id in processed_message_ids or lastMessage == message_text:
         #print(f"[{current_time}] Message {message.id} already processed, skipping.")
-        return  # Skip duplicate messages
+        return
+
+    # Get sender
+    sender_username = "Unknown"
+    sender = await message.get_sender()
 
    # If from group, check if it's from the correct username
     if event.is_group or (event.is_channel and not event.chat.broadcast):  # i.e., it's a megagroup
-        sender = await message.get_sender()
-
         if sender is None:
             #print(f"[{current_time}] Message {message.id} has no sender, skipping.")
             return
 
-        sender_username = sender.username.lower() if sender.username else None
+        sender_username = sender.username.lower() if sender.username else "Unknown"
         
-        #print(f"Sender Username: {sender_username}")
-        #print(f"[{current_time}] Message {message.id} | {message.text}")
-
         if sender_username not in [username.lower() for username in allowed_users]:
             #print(f"[{current_time}] Message {message.id} not from target username, skipping.")
             return
-        #print(f"[{current_time}] SPECIAL Message FROM ALLOWED USER {message.id} | {message.text}")
+    else:
+        if sender is not None:
+            sender_username = sender.username.lower() if sender.username else "Unknown"
 
     # Update last message content **before processing**
     lastMessage = message_text
     processed_message_ids.add(message.id)
 
-    # TODO add from channel/chat and username
     print(f"[{current_time}] Received Message: {message.id} | {sender_username}")
-    
     await forward_messageV3(message)  # Forward the message immediately
 
 async def find_group_chat_id():
