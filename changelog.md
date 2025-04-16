@@ -2,9 +2,13 @@
 
 All notable changes to this project are listed below.
 
+**[v3.2-alpha]**
+- Integrated bot logging to private channel 
+
 **[v3.1-alpha]**
 - Fixed username detection bug
 - Created Logger bot
+- Created Builder script
 
 **[v3-alpha]**
 - Integrated bot controller
