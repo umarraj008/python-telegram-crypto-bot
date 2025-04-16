@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Check if UPDATE=true
-# if [ "$UPDATE" == "true" ]; then
-#     echo "Running in update mode. Skipping Python script execution."
-#     # Keep the container running without executing the Python script
-#     tail -f /dev/null  # This will keep the container running indefinitely
-#     exit 0  # Exit so the Python script doesn't run
-# fi
-
 # Printing Env Data
 echo "+===========================================================+"
 echo "Hostname: $HOSTNAME"
@@ -103,5 +95,13 @@ echo "+===========================================================+"
 cat /app/config.json
 echo ""
 
+# Make LOGGER optional (default to false if not set)
+LOGGER=${LOGGER:-false}
+
 # Run the Python application
-exec python main.py
+if [ "$LOGGER" == "true" ]; then
+    echo "Running in Logger mode. Running Logger script..."
+    exec python saver.py
+else
+    exec python main.py
+fi
