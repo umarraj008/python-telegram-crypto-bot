@@ -1,0 +1,28 @@
+<script>
+  function process() {
+    var textarea = document.getElementById("input")
+    var text = textarea.value
+
+    text = text.replaceAll('""', '"')
+    text = text.slice(1, text.length-1)
+
+    document.getElementById("output").value = text
+  }
+
+  function copy() {
+    text = document.getElementById("output").value
+
+    navigator.clipboard.writeText(text)
+      .then(function() {
+        console.log("Text successfully copied to clipboard");
+        location.reload()
+      })
+      .catch(function(error) {
+        console.error("Error copying text: ", error);
+      });
+  }
+
+</script>
+<textarea id="input" onclick="clear()" onchange="process()" style="padding: 4px; margin: 4px; width: 600px; height: 300px;"></textarea>
+<br>
+<textarea id="output" style="padding: 4px; margin: 4px; width: 600px; height: 300px;" readonly onclick="copy()"></textarea>
