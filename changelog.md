@@ -2,6 +2,10 @@
 
 All notable changes to this project are listed below.
 
+**[v3.1-alpha]**
+- Fixed username detection bug
+- Created Logger bot
+
 **[v3-alpha]**
 - Integrated bot controller
 
