@@ -5,16 +5,29 @@ import re
 import json
 import base58
 # from Bot import BotCommunicator
+import argparse
 from typing import List
+
+# Set up argument parsing
+def parse_args():
+    parser = argparse.ArgumentParser(description="Load configuration file.")
+    parser.add_argument('-test', action='store_true', help="Use test configuration file")
+
+    return parser.parse_args()
+
+# Parse args
+args = parse_args()
 
 # Load configuration from the config.json file
 def load_config():
-    configFile = "config.json"
+    if args.test:
+        configFile = "testConfig.json"
+    else:
+        configFile = "config.json"
 
     with open(configFile, 'r') as f:
         return json.load(f)
 
-# Load the configuration data
 config = load_config()
 
 # Your Telegram API details from the config file
@@ -22,6 +35,8 @@ api_id = config['api_id']
 api_hash = config['api_hash']
 phone_number = config['phone_number']
 allowed_users = config['allowed_users']
+printer = config['printer']
+log_channel = "https://t.me/+hcUaCptjn3RkZTU0"
 
 # Trojan bot's chat ID or username
 TROJAN_BOT_CHAT_ID = config['trojan_bot_chat_id']
@@ -298,6 +313,32 @@ async def handler(event):
 
     print(f"[{current_time}] Received Message: {message.id} | {sender_username}")
     await forward_messageV3(message)  # Forward the message immediately
+
+    if printer:
+        await send_to_log_channel(event, sender_username)
+
+# Function to forward messages to the log channel
+async def send_to_log_channel(event, username):
+    message = event.message
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
+    # Prepare message details to print
+    message_details = f"""
+**Current Time:** {current_time}
+**Message Date:** {message.date} 
+**Message ID:** {message.id} 
+**Sender ID:** {event.sender_id} 
+**Sender Username:** [{event.sender.username if event.sender else 'Unknown'} : {username}] 
+**Chat Name:** {event.chat.title if event.chat else 'N/A'} 
+**Is Group:** {event.is_group} 
+**Is Channel:** {event.is_channel} 
+**Has Media:** {'Yes' if event.media else 'No'}
+"""
+    # Forward message
+    await client.forward_messages(log_channel, event.message)
+    
+    # Send details of that message
+    await client.send_message(log_channel, message_details)
 
 async def find_group_chat_id():
     all_chats = await client.get_dialogs()

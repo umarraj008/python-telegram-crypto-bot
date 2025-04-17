@@ -17,6 +17,9 @@ echo ""
 # Initialize an empty array to store the invite links
 CHANNEL_INVITE_LINKS=()
 
+# Make PRINTER optional (default to false if not set)
+PRINTER=${PRINTER:-false}
+
 # Loop to dynamically add each environment variable
 i=1
 while true; do
@@ -86,7 +89,7 @@ FINAL_ALLOWED_USERS="[${ALLOWED_USERS[@]}]"
 echo "Final constructed CHANNEL_INVITE_LINKS: $FINAL_CHANNEL_INVITE_LINKS"
 
 # Replace placeholders in config.json with environment variables
-echo "{\"api_id\": \"$API_ID\", \"api_hash\": \"$API_HASH\", \"phone_number\": \"$PHONE_NUMBER\", \"trojan_bot_chat_id\": \"$TROJAN_BOT_CHAT_ID\", \"channel_invite_links\": $FINAL_CHANNEL_INVITE_LINKS, \"allowed_users\": $FINAL_ALLOWED_USERS}" > /app/config.json
+echo "{\"api_id\": \"$API_ID\", \"api_hash\": \"$API_HASH\", \"phone_number\": \"$PHONE_NUMBER\", \"trojan_bot_chat_id\": \"$TROJAN_BOT_CHAT_ID\", \"printer\": $PRINTER, \"channel_invite_links\": $FINAL_CHANNEL_INVITE_LINKS, \"allowed_users\": $FINAL_ALLOWED_USERS}" > /app/config.json
 
 # Debugging: print the content of config.json
 echo "+===========================================================+"
@@ -95,13 +98,9 @@ echo "+===========================================================+"
 cat /app/config.json
 echo ""
 
-# Make LOGGER optional (default to false if not set)
-LOGGER=${LOGGER:-false}
+if [ "$PRINTER" = "true" ]; then
+    echo "WARNING: This bot will print to log channel!"
+fi
 
 # Run the Python application
-if [ "$LOGGER" == "true" ]; then
-    echo "Running in Logger mode. Running Logger script..."
-    exec python saver.py
-else
-    exec python main.py
-fi
+exec python main.py
