@@ -1,4 +1,5 @@
 from telethon import TelegramClient, events
+from telethon.errors import MessageIdInvalidError
 from datetime import datetime
 import asyncio
 import re
@@ -322,21 +323,34 @@ async def send_to_log_channel(event, username):
     message = event.message
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
+    # Get message details with checks for missing attributes
+    chat_title = event.chat.title if event.chat and hasattr(event.chat, 'title') else 'Unknown'
+    sender_id = event.sender_id if event.sender_id else 'Unknown'
+    message_id = message.id if hasattr(message, 'id') else 'Unknown'
+    sender_username = username if username else 'Unknown'
+    is_group = 'Yes' if event.is_group else 'No'  # Default to 'No' if not a group
+    has_media = 'Yes' if event.media else 'No'  # Default to 'No' if no media
+    chat_type = 'GROUP CHAT' if event.is_group else 'CHANNEL'
+
     # Prepare message details to print
     message_details = f"""
-**Current Time:** {current_time}
-**Message Date:** {message.date} 
-**Message ID:** {message.id} 
-**Sender ID:** {event.sender_id} 
-**Sender Username:** [{event.sender.username if event.sender else 'Unknown'} : {username}] 
-**Chat Name:** {event.chat.title if event.chat else 'N/A'} 
-**Is Group:** {event.is_group} 
-**Is Channel:** {event.is_channel} 
-**Has Media:** {'Yes' if event.media else 'No'}
+🕒 **Current Time:** {current_time}
+🔢 **MID:** {message_id} | **SID:** {sender_id} 
+👤 **Username:** {username}
+💬 **Chat Name:** {chat_title} 
+📱 **Type:** {chat_type} | 🎥 **Media:** {'Yes' if has_media else 'No'}
 """
     # Forward message
-    await client.forward_messages(log_channel, event.message)
-    
+    try:
+        if message_id != 'Unknown':  # Check if message ID is valid
+            await client.forward_messages(log_channel, message)
+        else:
+            #print(f"Message ID {message_id} is invalid, cannot forward.")
+            await client.send_message(log_channel, message.text or '[No text content]')
+    except MessageIdInvalidError:
+        #print(f"Message ID {message_id} is invalid or deleted, sending text instead.")
+        await client.send_message(log_channel, message.text or '[No text content]')
+
     # Send details of that message
     await client.send_message(log_channel, message_details)
 
