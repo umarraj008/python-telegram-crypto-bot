@@ -1,6 +1,8 @@
+# tests.py
+
 from telethon import TelegramClient, events
 from datetime import datetime
-# from tests import test_data
+from tests import test_data
 import asyncio
 import re
 import json

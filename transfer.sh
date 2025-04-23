@@ -24,6 +24,9 @@ docker cp "$FROM_CONTAINER":/app/addresses.txt "$TEMP_DIR/addresses.txt" || echo
 echo "Copying session_name.session from $FROM_CONTAINER to temporary directory..."
 docker cp "$FROM_CONTAINER":/app/session_name.session "$TEMP_DIR/session_name.session" || echo "Warning: session_name.session not found"
 
+echo "Copying config.json from $FROM_CONTAINER to temporary directory..."
+docker cp "$FROM_CONTAINER":/app/config.json "$TEMP_DIR/config.json" || echo "Warning: config.json not found"
+
 # 2. Stop the source container
 echo "Stopping source container '$FROM_CONTAINER'..."
 docker stop "$FROM_CONTAINER"
@@ -35,6 +38,9 @@ docker cp "$TEMP_DIR/addresses.txt" "$TO_CONTAINER":/app/addresses.txt || echo "
 echo "Copying session_name.session to $TO_CONTAINER..."
 docker cp "$TEMP_DIR/session_name.session" "$TO_CONTAINER":/app/session_name.session || echo "Warning: session_name.session not copied"
 
+echo "Copying config.json to $TO_CONTAINER..."
+docker cp "$TEMP_DIR/config.json" "$TO_CONTAINER":/app/config.json || echo "Warning: config.json not copied"
+
 # 4. Clean up the temporary directory
 echo "Cleaning up temporary files..."
 rm -rf "$TEMP_DIR"
@@ -44,3 +50,4 @@ echo "Starting destination container '$TO_CONTAINER'..."
 docker start "$TO_CONTAINER"
 
 echo "Transfer complete: $FROM_CONTAINER stopped, $TO_CONTAINER started and updated with new files."
+docker ps

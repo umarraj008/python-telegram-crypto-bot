@@ -11,6 +11,7 @@ readme.md
 changelog.md
 updater.bash
 builder.html
+todo.md
 
 # Ignore Python cache files
 __pycache__

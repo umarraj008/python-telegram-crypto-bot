@@ -4,15 +4,12 @@ addresses.txt
 session_name.session
 session_name.session-journal
 system_usage.log
-testConfig.json
+tests/testConfig.json
 
 # Ignore Python cache files
 __pycache__
 *.pyc
 *.pyo
-
-# Ignore all files in the 'tests' directory
-tests/
 
 # Ignore log files
 *.log

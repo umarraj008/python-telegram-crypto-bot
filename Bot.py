@@ -1,304 +1,201 @@
-import os
+# bot.py
 
-class Gap:
-    def display(self):
-        return "\n"
+from telethon import TelegramClient, events
+from log_channel import send_to_log_channel
+from utils import *
+from communicator import Communicator
+import re
 
-class Info:
-    def __init__(self, text):
-        self.text = text
+class TelegramBot:
+    def __init__(self, config):
+        self.config = config
+        self.client = TelegramClient('session_name', config['api_id'], config['api_hash'])
+        self.allowed_users = config['allowed_users']
+        self.trojan_bot_chat_id = config['trojan_bot_chat_id']
+        self.version = "v5"
+        self.negative_keywords = ["rug", "do not buy", "rug pull", "insta rug", "fishing", "bat call", "robot call", "sniper call", "scraper call", "bot call", "dont buy", "don't buy", "no buy", "scrapers", "for the boys", "for the community", "rug call", "instant rug", "dump"]
+        self.processed_message_ids = set()
+        self.lastMessage = ""
+        self.channel_invite_links = config['channel_invite_links']
+        self.printer = config['printer']
+        self.test = config['test']
+        self.phone_number = config['phone_number']
+        self.log_channel = "https://t.me/+hcUaCptjn3RkZTU0"
+        self.control_channel_name = f"Sniper King Controller#{self.config['name']}"
+        self.communicator = None
 
-    def display(self):
-        return self.text
+    async def forward_message(self, message):
+        """
+        Processes a message to extract a Solana address and forward it to a designated chat.
+        """
+        # Initialize values
+        rug_pull = False
+        address = ""
+        message_text = message.text
 
-class Option:
-    def __init__(self, text, action):
-        self.text = text
-        self.action = action
-        self.number_emojis = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+        # Remove URLs
+        text = re.sub(r'http[s]?://\S+|www\.\S+', '', message_text)
 
-    def display(self, index):
-        return f"{self.number_emojis[index]} {self.text}"
+        # Check for rug-related words in text
+        if any(word in text.lower() for word in self.negative_keywords):
+            rug_pull = True
+                            
+        # Remove all occurrences of the word "KING" from the text
+        kingless_text = re.sub(r'king', '', text, flags=re.IGNORECASE)
 
-    def execute(self):
-        self.action()
+        # Try extracting the address
+        address = extract_solana_address(kingless_text)
 
-class Page:
-    def __init__(self, slash="", bot_name="Sniper King", title="", info="", options=[], expects_text=False):
-        self.title = title
-        self.info = info
-        self.slash = slash
-        self.bot_name = bot_name
-        self.options = options
-        self.expects_text = expects_text  # If True, this page expects text input (like channel name)
-        self.pending_text_action = None  # Action to take when text is input (e.g., adding a channel)
-        self.invalid_input = False
-        self.visible_options = []
+        if not address:
+            parts = find_possible_split_parts(kingless_text)
 
-    def display(self):
-        options = ""
-        invalid = ""
+            if parts:
+                address = parts[0] + parts[1]
+                log(f"Detected split address parts and combined: {address}")
 
-        # Only display options, not gaps, for numeric input
-        index = 1
-        for option in self.options:
-            if not isinstance(option, Option):
-                options += option.display()
-            else:
-                self.visible_options.append(option)
-                options += option.display(index) + "\n"  # Display the actual option
-                index += 1
+        if not address:
+            address = combine_solana_address_parts(kingless_text)
 
-        if self.invalid_input:
-            self.invalid_input = False
-            invalid = "\n❌ **Invalid Input** ❌ Please enter a valid option."
+        # If no address is found
+        if not address:
+            log(f"No address found")
+            return None
+                        
+        # Validate Solana address
+        if not is_valid_solana_address(address):
+            log(f"Address {address} has already been forwarded or is invalid. Skipping.")
+            return f"Address {address} has already been forwarded or is invalid. Skipping."
+
+        # Check if address exists in addresses.txt
+        if address_exists(address):
+            log(f"Address {address} has already been forwarded or is invalid. Skipping.")
+            return f"Address {address} has already been forwarded or is invalid. Skipping."
+
+        # Save address
+        save_address(address)
+
+        # If rug pull dont forward
+        if rug_pull:
+            log(f"This coin is flagged as a rug pull.")
+            return "This coin is flagged as a rug pull. Stopping processing."
+
+        log(f"Found and forwarding Solana address: {address}")
+        await self.client.send_message(self.trojan_bot_chat_id, address)
+        return address
+
+    def get_config(self):
         return (
-f"""
-{self.bot_name}
-
-{self.title} /{self.slash} 
-
-{self.info}
-(Please type the number corresponding to your choice)
-
-{options}{invalid}
-""")
-
-    def handle_input(self, user_input):
-        if self.expects_text:
-            # If the page expects text input, handle it (e.g., adding a channel)
-            if self.pending_text_action:
-                self.pending_text_action(user_input)
-            self.expects_text = False  # Reset after handling the input
-        else:
-            try:
-                # Handle numeric option input (map to visible options)
-                choice = int(user_input)
-                if 1 <= choice <= len(self.visible_options):
-                    # Execute the selected option's action
-                    self.visible_options[choice - 1].execute()
-                else:
-                    self.invalid_input = True
-            except ValueError:
-                self.invalid_input = True
-
-class BotCommunicator:
-    def __init__(self, client, channel, bot_name):
-        self.client = client
-        self.channel = channel
-        self.current_page = "menu"
-        self.invalid_input = False
-        self.bot_name = bot_name
-        self.changelog = (
-"""**[v2.2]**
-- Added support for **private groups** and **channels**
-- Now using **dynamic list** to only allow messages from **select users**
-
-**[v2.1]**
-- Support for **Solana coin addresses (CA)** with **43-character length**
-- Integrated group chat monitoring for **cryptoyeezus**
-
-**[v2.0]**
-- **Rug pull detection** improvements
-- Detection of **SPLIT CA**
-- Detection of the **KING** keyword
-- **Solana coin validation** using **Base58 decoding**
-- **Length validation** for **Solana addresses** (**44 characters**)
-- **Debug output** with **timestamp printing**
-- **Rug pull CA** are now saved properly
-
-**[v1.2]**
-- Initial **rug pull detection**
-- **Word detection** and **removal functionality**
-
-**[v1.0]**
-- Monitoring of **Telegram channels**
-- Detection of **coin addresses (CA)**
-- Forwarding detected **CA** to **trojan bot**
-""")
-        self.pages = {
-            "menu": Page(
-                slash="menu", 
-                bot_name=self.bot_name, 
-                title="🏠 Menu 🏠",
-                info="Welcome to your bot's control panel.",
-                options=[
-                    Option("Manage Channels ➡️",       lambda: self.switch_page("channels")),
-                    Option("Manage Coin Addresses ➡️", lambda: self.switch_page("addresses")),
-                    Option("Pause Bot ⏸️",             lambda: self.switch_page("pause")),
-                    Option("View Config 📂",           lambda: self.switch_page("config")),
-                    Option("View Patch Notes 📑",      lambda: self.switch_page("patch")),
-                    Option("Help ❓",                   lambda: self.switch_page("help")),
-                ]
-            ),
-            "channels": Page(
-                slash="channels",
-                bot_name=self.bot_name,
-                title="📡 **Manage Channels** 📡",
-                info="Here you can manage the channels that are being monitored.",
-                options=[
-                    Option("Show Monitored Channels 📋", lambda: print("Displaying monitored channels...")),
-                    Option("Add Channel ➕", lambda: self.prompt_for_channel_name()),
-                    Option("Remove Channel ➖", lambda: print("Removing channel...")),
-                    Option("Clear All Channels 🧹", lambda: print("Clearing channels...")),
-                    Gap(),  # Just to leave a space
-                    Option("Go Back 🔙", lambda: self.switch_page("menu")),
-                ],
-            ),
-            "addresses": Page(
-                slash="addresses",
-                bot_name=self.bot_name,
-                title="💰 **Manage Coin Addresses** 💰",
-                info="Here you can manage the saved coin addresses.",
-                options=[
-                    Option("Show Addresses 📋",      lambda: print("")),
-                    Option("Add Address ➕",         lambda: self.prompt_for_channel_name()),
-                    Option("Remove Address ➖",      lambda: print("")),
-                    Option("Clear All Addresses 🧹", lambda: print("")),
-                    Gap(),
-                    Option("Go Back 🔙",             lambda: self.switch_page("menu"))
-                ],
-            ),
-            "pause": Page(
-                slash="pause", 
-                bot_name=self.bot_name,
-                title="⏸️ **Pause Bot** ⏸️",
-                info="Would you like to pause the bot?",
-                options=[
-                    Option("🔴 **Pause Bot** (Stops forwarding addresses)",    lambda: print("Displaying monitored channels...")),
-                    Option("🟢 **Resume Bot** (Resumes forwarding addresses)", lambda: self.prompt_for_channel_name()),
-                    Gap(),
-                    Info("Current Status: 🟢 Running"),
-                    Gap(),
-                    Option("Go Back 🔙",             lambda: self.switch_page("menu"))
-                ],
-            ),
-            "config": Page(
-                slash="config",
-                bot_name=self.bot_name,
-                title="📂 **View Config** 📂",
-                info="Here is the current configuration (config.json):",
-                options=[
-                    Info(
+f"""```api_id: {self.config['api_id']}
+api_hash: {self.config['api_hash']}
+phone_number: {self.config['phone_number']}
+trojan_bot_chat_id: {self.config['trojan_bot_chat_id']}
+printer: {self.config['printer']}
+channel_invite_links: {self.config['channel_invite_links']}
+allowed_users: {self.config['allowed_users']}
+```""")
+    
+    def get_channels(self):
+        invite_links = self.config['channel_invite_links']
+        formatted = "\n".join([f"{i+1}. {link}" for i, link in enumerate(invite_links)])
+        return f"""
+{formatted}
 """
-```
-{ "api_id": "20027855", "api_hash": "ab5081fcbdc01d94c1d182d7ac44a020", "phone_number": "+44 7399 276578", "trojan_bot_chat_id": "@solana_trojanbot", "channel_invite_links": [ "https://t.me/+J2FjYDsfcyU2NzZk", "https://t.me/+uefASAelAsc2MWVk", "https://t.me/cryptoyeezuschat", -1002560071675 ], "allowed_users": [ "CRYPTOYEEZUSSSS", "fiorenzonsol" ] }
-```
-"""),
-                    Gap(),
-                    Option("Go Back 🔙",             lambda: self.switch_page("menu"))
-                ],
-            ),
-            "help": Page(
-                slash="help", 
-                bot_name=self.bot_name, 
-                title="❓ **Help** ❓",
-                info="To interact with the bot's control panel, please follow these steps:",
-                options=[
-                    Info(
-"""
-1. Look at the menu and find the option you want to select.
-2. Type the number corresponding to the option in the chat.
-3. If you need to go back, select the "Go Back" option.
 
-Here are some commands:
-- **/menu**: 
-- **/channels**: Manage channels and group chats
-- **/addresses**: Manage coin addresses
-- **/pause**: Pause/Unpause the bot
-- **/config**: View your config
-- **/patch**: View patch notes
-- **/help**: View help information
+    async def init_bot_communicator(self):
+        """
+        Initializes the text-interface Communicator.
+        """
+        try:
+            # Check if the control channel exists
+            control_channel_id = await find_channel_id(self.client, self.control_channel_name)
 
-If you type something random, the bot will guide you back to the main menu.
-"""),
-                    Gap(),
-                    Option("Go Back 🔙",             lambda: self.switch_page("menu"))
-                ],
-            ),
-            "patch": Page(
-                slash="patch",
-                bot_name=self.bot_name,
-                title="📑 **View Patch Notes** 📑",
-                info="Here are the latest updates to Sniper King Bot v2.1:",
-                options=[
-                    Info(self.changelog),
-                    Gap(),
-                    Option("Go Back 🔙",             lambda: self.switch_page("menu"))
-                ],
-            ),
-        }
-
-    def switch_page(self, to):
-        self.current_page = to
-
-    def prompt_for_channel_name(self):
-        # When this is called, set `expects_text` to True to indicate the page now expects text input
-        print("Please type the name of the new channel:")
-        self.pages["channels"].expects_text = True  # Indicate that the page expects text input
-        self.pages["channels"].pending_text_action = self.add_channel
-
-    def add_channel(self, channel_name):
-        # This is the action to take once the user inputs a channel name
-        print(f"Channel '{channel_name}' has been added!")  # Replace with actual logic for adding a channel
-
-    def display(self):
-        invalid = ""
-        if self.invalid_input:
-            self.invalid_input = False
-            invalid = "❌ **Invalid Input** ❌ Please use a valid page name." 
-        return (
-f"""
-{self.pages[self.current_page].display()}{invalid}
-""")
-
-    async def input(self, text):
-        # Handle / commands: check if the text starts with / and match to a page's slash field
-        if text.startswith("/"):
-
-            # Home command
-            if text == "/home": 
-                self.switch_page("menu")
-                await self.send_message(self.display())
+            if control_channel_id is None:
+                # If the control channels ID is not found, stop the bot and notify
+                print(f"WARN: Channel '{self.control_channel_name}' ID not found, stopping bot.")
                 return
             
-            # Extract the command after the slash (e.g., /channels -> "channels")
-            page_name = text[1:]
-            if page_name in self.pages:
-                self.switch_page(page_name)
-            else:
-                self.invalid_input = True
+            # If channel ID is found, proceed with initializing the Communicator
+            self.communicator = Communicator(self.client, 
+                                             control_channel_id, 
+                                             self.version, 
+                                             self.get_config,
+                                             self.get_channels)
+            await self.communicator.send_welcome_message()
+            print(f"Communicator initialized at '{self.control_channel_name}'")
 
-            await self.send_message(self.display())
+        except Exception as e:
+            print(f"WARN: Failed to initialize Communicator: {e}")
 
-        else:        
-            # Handle input for the current page (either option selection or text input)
-            self.pages[self.current_page].handle_input(text)
-            await self.send_message(self.display())
+    async def handler(self, event):
+        """
+        Event handler that listens for new messages from specified channels and processes them.
+        """
+        message = event.message
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
+        # Normalize message text (remove extra spaces, newlines, etc.)
+        message_text = message.text.strip() if message.text else ""
 
-    async def send_welcome_message(self):
-        await self.send_message(
-f"""
-{self.bot_name}
+        # Check if message ID or content has already been processed
+        if message.id in self.processed_message_ids or self.lastMessage == message_text:
+            #print(f"[{current_time}] Message {message.id} already processed, skipping.")
+            return
 
-Hello 👋
-Ready to help manage your bot! 🚀
+        # Get sender
+        sender_username = "Unknown"
+        sender = await message.get_sender()
 
-Just type /menu to get going or /help if you need assistance! 😊
-""")
-    
-    async def send_message(self, message):
-        await self.client.send_message(self.channel, message)
+        # If from group, check if it's from the correct username
+        if event.is_group or (event.is_channel and not event.chat.broadcast):  # i.e., it's a megagroup
+            if sender is None:
+                #print(f"[{current_time}] Message {message.id} has no sender, skipping.")
+                return
 
-def main():
-    bot_communicator = BotCommunicator()
+            sender_username = sender.username.lower() if sender.username else "Unknown"
+            
+            if sender_username not in [username.lower() for username in self.allowed_users]:
+                #print(f"[{current_time}] Message {message.id} not from target username, skipping.")
+                return
+        else:
+            if sender is not None:
+                sender_username = sender.username.lower() if sender.username else "Unknown"
 
-    while True:
-        os.system("cls")  # Clear screen for each new loop
-        bot_communicator.display()
-        user_input = input().strip()  # Get user input
-        bot_communicator.input(user_input)
+        # Update last message content **before processing**
+        self.lastMessage = message_text
+        self.processed_message_ids.add(message.id)
 
-if __name__ == "__main__":
-    main()
+        print(f"[{current_time}] Received Message: {message.id} | {sender_username}")
+        await self.forward_message(message)  # Forward the message immediately
+
+        if self.printer:
+            await send_to_log_channel(self.client, event, sender_username, self.version, self.log_channel)
+
+    async def run(self):
+        if self.test:
+            print(f"WARN: Running in test mode")
+        if self.printer:
+            print(f"WARN: Running in printer mode")
+
+        await self.client.start(self.phone_number)
+        await self.init_bot_communicator()
+
+        print(f"""
+  ______     __                                ____        __ 
+ /_  __/__  / /__  ____ __________ _____ ___  / __ )____  / /_
+  / / / _ \/ / _ \/ __ `/ ___/ __ `/ __ `__ \/ __  / __ \/ __/
+ / / /  __/ /  __/ /_/ / /  / /_/ / / / / / / /_/ / /_/ / /_  
+/_/  \___/_/\___/\__, /_/   \__,_/_/ /_/ /_/_____/\____/\__/ 
+                /____/
+
+| Version: {self.version}
+| By Umar Rajput""")
+        print("")
+
+        self.client.add_event_handler(self.handler, events.NewMessage(chats=self.channel_invite_links))
+        print("TelegramBot has started...")
+
+        if self.communicator is not None:
+            self.client.add_event_handler(self.communicator.handler, events.NewMessage(chats=self.communicator.channel))
+            print("TelegramBot Communicator has started...")
+        
+        await self.client.run_until_disconnected()
