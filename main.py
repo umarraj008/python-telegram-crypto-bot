@@ -1,5 +1,5 @@
 from telethon import TelegramClient, events
-from telethon.errors import MessageIdInvalidError
+from telethon.errors import MessageIdInvalidError, FloodWaitError
 from datetime import datetime
 import asyncio
 import re
@@ -38,6 +38,8 @@ phone_number = config['phone_number']
 allowed_users = config['allowed_users']
 printer = config['printer']
 log_channel = "https://t.me/+hcUaCptjn3RkZTU0"
+version = "v3.2.2a"
+negative_keywords = ["rug", "do not buy", "rug pull", "insta rug", "fishing", "bat call", "robot call", "sniper call", "dont buy", "don't buy", "scrapers", "for the boys", "for the community", "rug call"]
 
 # Trojan bot's chat ID or username
 TROJAN_BOT_CHAT_ID = config['trojan_bot_chat_id']
@@ -227,7 +229,7 @@ async def forward_messageV3(message):
     text = re.sub(r'http[s]?://\S+|www\.\S+', '', message_text)
 
     # Check for rug-related words in text
-    if any(word in text.lower() for word in ["rug", "do not buy", "rug pull", "insta rug", "fishing"]):
+    if any(word in text.lower() for word in negative_keywords):
         rug_pull = True
                         
     # Remove all occurrences of the word "KING" from the text
@@ -321,34 +323,43 @@ async def handler(event):
 # Function to forward messages to the log channel
 async def send_to_log_channel(event, username):
     message = event.message
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    current_time = datetime.now().strftime('%Y-%m-%d • %H:%M:%S')
 
     # Get message details with checks for missing attributes
-    chat_title = event.chat.title if event.chat and hasattr(event.chat, 'title') else 'Unknown'
-    sender_id = event.sender_id if event.sender_id else 'Unknown'
-    message_id = message.id if hasattr(message, 'id') else 'Unknown'
-    sender_username = username if username else 'Unknown'
-    is_group = 'Yes' if event.is_group else 'No'  # Default to 'No' if not a group
-    has_media = 'Yes' if event.media else 'No'  # Default to 'No' if no media
-    chat_type = 'GROUP CHAT' if event.is_group else 'CHANNEL'
+    raw_chat_title = event.chat.title if event.chat and hasattr(event.chat, 'title') else 'Unknown'
+    sender_id = event.sender_id if event.sender_id else 'Null'
+    message_id = message.id if hasattr(message, 'id') else 'Null'
+    chat_id = event.chat_id if event.chat_id else 'Null'
+    is_group = 'G' if getattr(event, 'is_group', False) else 'C'
+    has_media = 'Y' if event.media else 'N'
+
+    chat_title_map = {
+        "Yeezus Prophets Chat": "Yeezus Chat",
+        "Yeezus’ Prophets": "Yeezus Channel"
+    }
+
+    chat_title = chat_title_map.get(raw_chat_title, raw_chat_title)
 
     # Prepare message details to print
     message_details = f"""
-🕒 **Current Time:** {current_time}
-🔢 **MID:** {message_id} | **SID:** {sender_id} 
-👤 **Username:** {username}
-💬 **Chat Name:** {chat_title} 
-📱 **Type:** {chat_type} | 🎥 **Media:** {'Yes' if has_media else 'No'}
+**🕒 {current_time}** | __{version}__
+💬 **{chat_title}:** {username}
+`{is_group}{has_media}{chat_id}.{message_id}.{sender_id}`
 """
+    #VERSION:TYPE:MEDIA:CID:MID:SID
     # Forward message
     try:
-        if message_id != 'Unknown':  # Check if message ID is valid
+        if message_id != 'Null':  # Check if message ID is valid
             await client.forward_messages(log_channel, message)
         else:
-            #print(f"Message ID {message_id} is invalid, cannot forward.")
+            print(f"Message ID {message_id} is invalid, cannot forward.")
             await client.send_message(log_channel, message.text or '[No text content]')
     except MessageIdInvalidError:
-        #print(f"Message ID {message_id} is invalid or deleted, sending text instead.")
+        print(f"Message ID {message_id} is invalid or deleted, sending text instead.")
+        await client.send_message(log_channel, message.text or '[No text content]')
+    except FloodWaitError as e:
+        wait_time = e.seconds
+        print(f"Message sent as text due to flood wait. Wait time: {wait_time} seconds.")
         await client.send_message(log_channel, message.text or '[No text content]')
 
     # Send details of that message

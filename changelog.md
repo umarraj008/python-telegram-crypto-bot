@@ -2,6 +2,12 @@
 
 All notable changes to this project are listed below.
 
+**[v3.2.2-alpha]**
+- fix logger bug -> rate limit issue on forwarding messages
+- fix has media printing in logs
+- compress chat name -> name
+- compress current time -> time
+
 **[v3.2.1-alpha]**
 - Fixed issue with deleted messages not getting forwarded to private channel
 
