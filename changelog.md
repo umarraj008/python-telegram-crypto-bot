@@ -12,6 +12,17 @@ All notable changes to this project are documented below.
 - Restructured for easier scaling (e.g. multi-bot support, future extensions)
 - Updated negative keywords for better rug pull detection
 
+NON TECH
+**[v5]**
+- **Improved Bot Performance**: Faster and more efficient operation.
+- **Better Organization**: Code is cleaner and easier to manage.
+- **More Reliable**: Smoother, more stable performance.
+- **Ready for Growth**: Easier to scale and add new features.
+- **Enhanced Security**: Better detection of rug pulls. 
+
+The bot now uses the following keywords to help identify potential rugs:
+  - "rug", "do not buy", "rug pull", "insta rug", "fishing", "bat call", "robot call", "sniper call", "scraper call", "bot call", "dont buy", "don't buy", "no buy", "scrapers", "for the boys", "for the community", "rug call", "instant rug", "dump"
+
 ---
 
 **[v3.2.2-alpha]**
@@ -38,14 +49,10 @@ All notable changes to this project are documented below.
 
 ---
 
-**[v3.0-alpha]**
-- Integrated external bot controller for real-time input and management
-
----
-
-**[v2.3]**
+**[v3-alpha]**
 - Fixed group chat compatibility issues
 - Improved detection logic for split Coin Addresses (CA)
+- Integrated external bot controller for real-time input and management
 
 ---
 

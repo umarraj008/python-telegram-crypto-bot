@@ -1,15 +1,15 @@
-addresses.txt
-*.session
-*.session-journal
-session_name.session
-session_name.session-journal
-system_usage.log
+telegram-bot/addresses.txt
+telegram-bot/*.session
+telegram-bot/*.session-journal
+telegram-bot/session_name.session
+telegram-bot/session_name.session-journal
+telegram-bot/system_usage.log
 tests/testConfig.json
 
 # Ignore Python cache files
-__pycache__
-*.pyc
-*.pyo
+telegram-bot/__pycache__
+telegram-bot/*.pyc
+telegram-bot/*.pyo
 
 # Ignore log files
-*.log
+telegram-bot/*.log
