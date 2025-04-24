@@ -12,6 +12,7 @@ print_section() {
 print_section "Environment Variables"
 
 echo "Hostname: $HOSTNAME"
+echo "Name: $NAME"
 echo "API ID: $API_ID"
 echo "API HASH: $API_HASH"
 echo "Phone Number: $PHONE_NUMBER"
@@ -99,7 +100,7 @@ if [ "$NEW" == "true" ]; then
     echo "Final constructed CHANNEL_INVITE_LINKS: $FINAL_CHANNEL_INVITE_LINKS"
 
     # Replace placeholders in config.json with environment variables
-    echo "{\"api_id\": \"$API_ID\", \"api_hash\": \"$API_HASH\", \"phone_number\": \"$PHONE_NUMBER\", \"trojan_bot_chat_id\": \"$TROJAN_BOT_CHAT_ID\", \"channel_invite_links\": $FINAL_CHANNEL_INVITE_LINKS, \"allowed_users\": $FINAL_ALLOWED_USERS}" > /app/config.json
+    echo "{\"name\": \"$NAME\",\"api_id\": \"$API_ID\", \"api_hash\": \"$API_HASH\", \"phone_number\": \"$PHONE_NUMBER\", \"trojan_bot_chat_id\": \"$TROJAN_BOT_CHAT_ID\", \"channel_invite_links\": $FINAL_CHANNEL_INVITE_LINKS, \"allowed_users\": $FINAL_ALLOWED_USERS}" > /app/config.json
 
     # Debugging: print the content of config.json
     echo "+===========================================================+"

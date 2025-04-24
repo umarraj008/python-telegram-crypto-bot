@@ -39,5 +39,6 @@ def load_config(args):
     # Add the parsed command-line arguments to the config
     config["test"] = args.test
     config["printer"] = args.printer
+    config["name"] = config["name"].capitalize()
 
     return config
