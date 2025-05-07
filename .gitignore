@@ -5,6 +5,12 @@ telegram-bot/session_name.session
 telegram-bot/session_name.session-journal
 telegram-bot/system_usage.log
 tests/testConfig.json
+addresses.txt
+*.session
+*.session-journal
+session_name.session
+session_name.session-journal
+testConfig.json
 
 # Ignore Python cache files
 telegram-bot/__pycache__

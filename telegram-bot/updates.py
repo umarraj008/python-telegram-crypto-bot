@@ -1,4 +1,7 @@
 updates = [
+"""**[v5.1]**
+- Patched issue with backticks messing up CA detection
+""",
 """**[v5]**
 - Major refactor: migrated logic from `main.py` into a structured `TelegramBot` class
 - Modularized code into separate components: `bot.py`, `utils.py`, `log_channel.py`

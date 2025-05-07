@@ -12,7 +12,7 @@ class TelegramBot:
         self.client = TelegramClient('session_name', config['api_id'], config['api_hash'])
         self.allowed_users = config['allowed_users']
         self.trojan_bot_chat_id = config['trojan_bot_chat_id']
-        self.version = "v5"
+        self.version = "v5.1"
         self.negative_keywords = ["rug", "do not buy", "rug pull", "insta rug", "fishing", "bat call", "robot call", "sniper call", "scraper call", "bot call", "dont buy", "don't buy", "no buy", "scrapers", "for the boys", "for the community", "rug call", "instant rug", "dump"]
         self.processed_message_ids = set()
         self.lastMessage = ""
@@ -40,8 +40,11 @@ class TelegramBot:
         if any(word in text.lower() for word in self.negative_keywords):
             rug_pull = True
                             
+        # Remove all occurrences of the backtick (`) character
+        cleaned_text = re.sub(r'`', '', text)
+                            
         # Remove all occurrences of the word "KING" from the text
-        kingless_text = re.sub(r'king', '', text, flags=re.IGNORECASE)
+        kingless_text = re.sub(r'king', '', cleaned_text, flags=re.IGNORECASE)
 
         # Try extracting the address
         address = extract_solana_address(kingless_text)
